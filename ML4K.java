@@ -16,14 +16,16 @@ import com.google.appinventor.components.annotations.UsesLibraries;
 
 import android.app.Activity;
 
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
+import java.net.URLEncoder;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.HttpURLConnection;
 import java.util.Scanner;
 
-import org.json.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 @DesignerComponent(version = YaVersion.LABEL_COMPONENT_VERSION,
   description = "This provides an interface for the Machine Learning for Kids website.",
@@ -32,7 +34,7 @@ import org.json.*;
   iconName = "images/extension.png")
 @SimpleObject(external=true)
 @UsesPermissions(permissionNames = "android.permission.INTERNET") // might need library for json
-@UsesLibraries(libraries = "json.jar")
+@UsesLibraries(libraries = "gson.jar")
 public final class ML4K extends AndroidNonvisibleComponent {
 
   private final Activity activity;
@@ -65,6 +67,8 @@ public final class ML4K extends AndroidNonvisibleComponent {
       public void run() {
 
         try {
+
+          // Pull from URL
           URL url = new URL(urlStr);
           HttpURLConnection conn = (HttpURLConnection) url.openConnection();
           conn.setReadTimeout(10000);
@@ -74,16 +78,24 @@ public final class ML4K extends AndroidNonvisibleComponent {
           conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0");
 
           Scanner scanner = new Scanner(conn.getInputStream());
-
-          final String json = scanner.next();
-
+          String json = scanner.next();
           conn.disconnect();
+
+          // Parsing
+          JsonElement jsonElement = new JsonParser().parse(json);
+          JsonArray jsonArray = jsonElement.getAsJsonArray();
+          JsonObject value = jsonArray.get(0).getAsJsonObject();
+
+          final String className = value.get("class_name").getAsString();
+          final double confidence = value.get("confidence").getAsDouble();
+
+
 
           // Dispatch the event.
           activity.runOnUiThread(new Runnable(){
             @Override
             public void run() {
-              GotClassification(data, json);
+              GotClassification(data, className, confidence);
             }
           });
         } catch(Exception e){
@@ -92,7 +104,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
           activity.runOnUiThread(new Runnable(){
             @Override
             public void run() {
-              GotClassification(data, "ERROR");
+              GotClassification(data, "ERROR", 0);
             }
           });
         }
@@ -106,15 +118,21 @@ public final class ML4K extends AndroidNonvisibleComponent {
    *
    * @param data The data
    * @param classification The classification
+   * @param confidence The confidence of the classification
    */
   @SimpleEvent
-  public void GotClassification(String data, String classification) {
+  public void GotClassification(String data, String classification, double confidence) {
     // invoke the application's "GotClassification" event handler.
-    EventDispatcher.dispatchEvent(this, "GotClassification", data, classification);
+    EventDispatcher.dispatchEvent(this, "GotClassification", data, classification, confidence);
   }
 
   private String generateURL(String data){
-    return baseURL + key + endpointURL + data;
+    try {
+      return baseURL + key + endpointURL + URLEncoder.encode(data, "UTF-8");
+    } catch (Exception e){
+      e.printStackTrace();
+      return "";
+    }
   }
 
 }
