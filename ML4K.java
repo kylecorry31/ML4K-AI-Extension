@@ -12,6 +12,7 @@ import com.google.appinventor.components.common.PropertyTypeConstants;
 import com.google.appinventor.components.common.YaVersion;
 import com.google.appinventor.components.runtime.util.AsynchUtil;
 import com.google.appinventor.components.annotations.UsesPermissions;
+import com.google.appinventor.components.annotations.UsesLibraries;
 
 import android.app.Activity;
 
@@ -20,14 +21,18 @@ import java.io.BufferedReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.HttpURLConnection;
+import java.util.Scanner;
+
+import org.json.*;
 
 @DesignerComponent(version = YaVersion.LABEL_COMPONENT_VERSION,
   description = "This provides an interface for the Machine Learning for Kids website.",
   category = ComponentCategory.EXTENSION,
   nonVisible = true,
-  iconName = "images/externalComponent.png")
+  iconName = "images/extension.png")
 @SimpleObject(external=true)
 @UsesPermissions(permissionNames = "android.permission.INTERNET") // might need library for json
+@UsesLibraries(libraries = "json.jar")
 public final class ML4K extends AndroidNonvisibleComponent {
 
   private final Activity activity;
@@ -60,7 +65,6 @@ public final class ML4K extends AndroidNonvisibleComponent {
       public void run() {
 
         try {
-          // TODO: Figure out why the return string is blank
           URL url = new URL(urlStr);
           HttpURLConnection conn = (HttpURLConnection) url.openConnection();
           conn.setReadTimeout(10000);
@@ -68,15 +72,13 @@ public final class ML4K extends AndroidNonvisibleComponent {
           conn.setRequestMethod("GET");
           conn.setRequestProperty("Content-Type", "application/json");
           conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0");
-          InputStreamReader reader = new InputStreamReader(conn.getInputStream());
-          BufferedReader rd = new BufferedReader(reader);
-          StringBuilder sb = new StringBuilder();
-          String line;
-          while ((line = rd.readLine()) != null) {
-            sb.append(line);
-          }
-          final String json = sb.toString();
+
+          Scanner scanner = new Scanner(conn.getInputStream());
+
+          final String json = scanner.next();
+
           conn.disconnect();
+
           // Dispatch the event.
           activity.runOnUiThread(new Runnable(){
             @Override
