@@ -12,8 +12,8 @@ Download the .aix file from the [releases](https://github.com/kylecorry31/ML4K-A
 
 2. Use the "set Key" block with the API key you obtained to initialize the extension.
 
-3a. If using ML4K to classify text, use the "ClassifyText" block with the text to classify.
-3b. If using ML4K to classify images, use the "ClassifyImage" block with the image path to classify.
+3. (a) If using ML4K to classify text, use the "ClassifyText" block with the text to classify.
+3. (b) If using ML4K to classify images, use the "ClassifyImage" block with the image path to classify.
 
 4. Use the "GotClassification" block to retrieve the classification once it is completed.
 
