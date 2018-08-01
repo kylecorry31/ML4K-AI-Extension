@@ -8,6 +8,7 @@ Use machine learning in AppInventor, with easy training using text or images thr
 
 ### Image classification
 ![ML4K Image Example](examples/ml4k-image.PNG)
+
 Note: The ClassifyImage block takes the path to an image, which you can get from the Selected property of an ImagePicker.
 
 ## Installation
