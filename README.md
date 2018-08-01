@@ -2,7 +2,13 @@
 Use machine learning in AppInventor, with easy training using text or images through the [Machine Learning for Kids](https://machinelearningforkids.co.uk/) website.
 
 ## Example
+
+### Text classification
 ![ML4K Text Example](examples/ml4k-text.PNG)
+
+### Image classification
+![ML4K Image Example](examples/ml4k-image.PNG)
+Note: The ClassifyImage block takes the path to an image, which you can get from the Selected property of an ImagePicker.
 
 ## Installation
 Download the latest .aix file from the [releases](https://github.com/kylecorry31/ML4K-AI-Extension/releases) page and follow the "2. How to use extensions components" section of [this website](http://ai2.appinventor.mit.edu/reference/other/extensions.html) to install add the extension to your project.
@@ -18,8 +24,10 @@ Download the latest .aix file from the [releases](https://github.com/kylecorry31
 
 4. Use the "GotClassification" block to retrieve the classification once it is completed.
 
+5. Use the "GotError" block to retrieve any errors which occur during classification.
+
 ### Handling Errors
-Upon an error, the "GotClassification" block will set the classification to ERROR and the confidence to 0. This will be changed soon to use an error catch block such as "GotClassificationError".
+Upon an error, the "GotError" block will be called with the error that occurred.
 
 ## License
 This project is licensed under the [MIT License](LICENSE).
