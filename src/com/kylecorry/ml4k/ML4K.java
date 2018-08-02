@@ -27,7 +27,7 @@ import java.util.Scanner;
         description = "This provides an interface for the Machine Learning for Kids website.",
         category = ComponentCategory.EXTENSION,
         nonVisible = true,
-        iconName = "images/extension.png")
+        iconName = "aiwebres/ml4k.png")
 @SimpleObject(external = true)
 @UsesPermissions(permissionNames = "android.permission.INTERNET")
 @UsesLibraries(libraries = "gson.jar")
