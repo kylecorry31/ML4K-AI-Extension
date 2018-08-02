@@ -62,6 +62,10 @@ public final class ML4K extends AndroidNonvisibleComponent {
             @Override
             public void run() {
                 try {
+                    if (key == null || key.isEmpty()) {
+                      GotError(path, "API key not set");
+                      return;
+                    }
                     // Get the data
                     final String imageData = getImageData(path);
                     String dataStr = "{\"data\": " + "\"" + URLEncoder.encode(imageData, "UTF-8") + "\"}";
@@ -118,6 +122,10 @@ public final class ML4K extends AndroidNonvisibleComponent {
             @Override
             public void run() {
                 try {
+                    if (key == null || key.isEmpty()) {
+                      GotError(data, "API key not set");
+                      return;
+                    }
                     // Get the data
                     String urlStr = getURL() + "?data=" + URLEncoder.encode(data, "UTF-8");
 
