@@ -16,6 +16,9 @@ Note: The ClassifyImage block takes the path to an image, which you can get from
 ### Numbers classification
 ![ML4K Number Example](examples/ml4k-numbers.PNG)
 
+### Live examples
+See example .aia projects in the examples directory of this repo (Created by [Joe Mazzone](https://github.com/MrMazzone)). Look at the code blocks for where to add your API key (API key is not included), they are set in the click method - though you can set it anywhere you choose as long as it is before the classification occurs.
+
 ## Installation
 Download the latest .aix file from the [releases](https://github.com/kylecorry31/ML4K-AI-Extension/releases) page and follow the "2. How to use extensions components" section of [this website](http://ai2.appinventor.mit.edu/reference/other/extensions.html) to install add the extension to your project.
 
