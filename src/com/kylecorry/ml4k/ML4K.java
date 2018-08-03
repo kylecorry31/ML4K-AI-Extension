@@ -1,6 +1,7 @@
 package com.kylecorry.ml4k;
 
 import com.google.appinventor.components.runtime.*;
+import com.google.appinventor.components.runtime.util.YailList;
 import com.google.appinventor.components.annotations.DesignerComponent;
 import com.google.appinventor.components.annotations.DesignerProperty;
 import com.google.appinventor.components.annotations.SimpleFunction;
@@ -20,6 +21,7 @@ import com.google.gson.*;
 
 import java.io.*;
 import java.net.*;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Scanner;
 
@@ -168,6 +170,59 @@ public final class ML4K extends AndroidNonvisibleComponent {
         });
     }
 
+    @SimpleFunction(description = "Get the classification for the numbers.")
+    public void ClassifyNumbers(final YailList numbers) {
+        runInBackground(new Runnable() {
+            @Override
+            public void run() {
+                final String data = numbers.toString();
+                try {
+                    if (key == null || key.isEmpty()) {
+                      GotError(data, "API key not set");
+                      return;
+                    }
+                    // Get the data
+                    String urlStr = getURL() + "?" + urlEncodeList("data", numbers);
+
+                    // Setup the request
+                    URL url = new URL(urlStr);
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("GET");
+                    conn.setRequestProperty("Content-Type", "application/json");
+                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0");
+
+                    // Parse
+                    if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                        final String json = read(conn.getInputStream());
+                        conn.disconnect();
+
+                        // Parse JSON
+                        try {
+                            Classification classification = Classification.fromJson(data, json);
+                            GotClassification(classification.data, classification.classification, classification.confidence);
+                        } catch (JsonParseException e) {
+                            GotError(data, "Bad data from server: " + json);
+                        }
+                    } else {
+                        GotError(data, "Bad response from server: " + conn.getResponseCode());
+                        conn.disconnect();
+                    }
+
+                } catch (UnsupportedEncodingException e) {
+                    GotError(data, "Could not encode text");
+                } catch (ProtocolException e) {
+                    e.printStackTrace();
+                } catch (MalformedURLException e) {
+                    GotError(data, "Could not generate URL");
+                } catch (IOException e) {
+                    GotError(data, "No Internet connection.");
+                }
+
+
+            }
+        });
+    }
+
     /**
      * Event indicating that a classification got an error.
      *
@@ -257,6 +312,30 @@ public final class ML4K extends AndroidNonvisibleComponent {
 
     private void runInBackground(Runnable runnable) {
         AsynchUtil.runAsynchronously(runnable);
+    }
+
+    /**
+     * Encode a list for a URL get request.
+     * @param paramName The name of the parameter.
+     * @param list The list to encode.
+     * @return The encoded list.
+     */
+    private String urlEncodeList(String paramName, YailList list) throws UnsupportedEncodingException {
+        StringBuilder sb = new StringBuilder();
+        if (list == null || list.size() == 0){
+            return "";
+        }
+
+        for (int i = 0; i < list.size(); i++) {
+            sb.append(paramName);
+            sb.append('=');
+            sb.append(list.getObject(i));
+            if (i != list.size() - 1){
+                sb.append('&');
+            }
+        }
+
+        return sb.toString();
     }
 
 

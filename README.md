@@ -1,7 +1,7 @@
 # ML4K AppInventor Extension
-Use machine learning in AppInventor, with easy training using text or images through the [Machine Learning for Kids](https://machinelearningforkids.co.uk/) website.
+Use machine learning in AppInventor, with easy training using text, images, or numbers through the [Machine Learning for Kids](https://machinelearningforkids.co.uk/) website.
 
-[![Download (.aix)](examples/download.png)](https://github.com/kylecorry31/ML4K-AI-Extension/releases/download/v0.5.1-beta/ML4K.aix)
+[![Download (.aix)](examples/download.png)](https://github.com/kylecorry31/ML4K-AI-Extension/releases/download/v0.6-beta/ML4K.aix)
 
 ## Example
 
@@ -13,6 +13,9 @@ Use machine learning in AppInventor, with easy training using text or images thr
 
 Note: The ClassifyImage block takes the path to an image, which you can get from the Selected property of an ImagePicker.
 
+### Numbers classification
+![ML4K Number Example](examples/ml4k-numbers.PNG)
+
 ## Installation
 Download the latest .aix file from the [releases](https://github.com/kylecorry31/ML4K-AI-Extension/releases) page and follow the "2. How to use extensions components" section of [this website](http://ai2.appinventor.mit.edu/reference/other/extensions.html) to install add the extension to your project.
 
@@ -21,9 +24,10 @@ Download the latest .aix file from the [releases](https://github.com/kylecorry31
 
 2. Use the "set Key" block with the API key you obtained to initialize the extension.
 
-3. Classify the text or image.
+3. Classify the text, image, or numbers.
   * If classifying text, use the "ClassifyText" block with the text to classify.
   * If classifying images, use the "ClassifyImage" block with the image path to classify.
+  * If classifying numbers, use the "ClassifyNumbers" block with a list of numbers to classify.
 
 4. Use the "GotClassification" block to retrieve the classification once it is completed.
 
