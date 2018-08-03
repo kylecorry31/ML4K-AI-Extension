@@ -43,7 +43,9 @@ Upon an error, the "GotError" block will be called with the error that occurred.
 This project is licensed under the [MIT License](LICENSE).
 
 ## Credits
-The Machine Learning for Kids repository can be found here https://github.com/IBM/taxinomitis
+* [The Machine Learning for Kids](https://github.com/IBM/taxinomitis) for providing the training tool and API endpoint.
+* [Kyle Corry (Me)](https://github.com/kylecorry31) for project planning, programming the extension, and testing.
+* [Joe Mazzone](https://github.com/MrMazzone) for help with project planning, testing, and examples.
 
 ## Contribute
 Please feel free to contribute to this extension, or if you find an issue be sure to report it under issues.
