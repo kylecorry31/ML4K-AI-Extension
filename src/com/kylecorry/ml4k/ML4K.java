@@ -320,7 +320,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
      * @param list The list to encode.
      * @return The encoded list.
      */
-    private String urlEncodeList(String paramName, YailList list) throws UnsupportedEncodingException {
+    private String urlEncodeList(String paramName, YailList list) {
         StringBuilder sb = new StringBuilder();
         if (list == null || list.size() == 0){
             return "";
