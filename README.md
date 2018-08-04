@@ -25,7 +25,7 @@ Download the latest .aix file from the [releases](https://github.com/kylecorry31
 ## Guide
 1. After installing the extension, you need to get an API key, which can be obtained from [Machine Learning for Kids](https://machinelearningforkids.co.uk/).
 
-2. Use the "set Key" block with the API key you obtained to initialize the extension.
+2. Copy and paste the API Key into the ML4K component’s “Key” property on the Designer screen or use the "set Key" block on the Blocks screen. Note: API Key must be set before you can use any of the ML4K extension blocks for classification. If you choose to set the key using the “set Key” block, be sure to set the key in the Screen.Initialize event or any time before you use a classification method (purple block).
 
 3. Classify the text, image, or numbers.
   * If classifying text, use the "ClassifyText" block with the text to classify.
