@@ -27,7 +27,7 @@ Download the latest .aix file from the [releases](https://github.com/kylecorry31
 
 2. Copy and paste the API Key into the ML4K component’s “Key” property on the Designer screen or use the "set Key" block on the Blocks screen. Note: API Key must be set before you can use any of the ML4K extension blocks for classification. If you choose to set the key using the “set Key” block, be sure to set the key in the Screen.Initialize event or any time before you use a classification method (purple block).
 
-![Set Key](set_key.png)
+![Set Key](examples/set_key.png)
 
 3. Classify the text, image, or numbers.
   * If classifying text, use the "ClassifyText" block with the text to classify.
