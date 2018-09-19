@@ -70,7 +70,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     }
                     // Get the data
                     final String imageData = getImageData(path);
-                    String dataStr = "{\"data\": " + "\"" + URLEncoder.encode(imageData, "UTF-8") + "\"}";
+                    String dataStr = "{\"data\": " + "\"" + imageData + "\"}";
 
                     // Setup the request
                     URL url = new URL(getURL());
