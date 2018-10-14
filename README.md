@@ -1,7 +1,7 @@
 # ML4K AppInventor Extension
 Use machine learning in AppInventor, with easy training using text, images, or numbers through the [Machine Learning for Kids](https://machinelearningforkids.co.uk/) website.
 
-[![Download (.aix)](examples/download.png)](https://github.com/kylecorry31/ML4K-AI-Extension/releases/download/v0.6-beta/ML4K.aix)
+[![Download (.aix)](examples/download.png)](https://github.com/kylecorry31/ML4K-AI-Extension/releases/download/v0.7-beta/ML4K.aix)
 
 ## Example
 
