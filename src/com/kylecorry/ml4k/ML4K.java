@@ -21,6 +21,7 @@ import com.google.gson.*;
 
 import java.io.*;
 import java.net.*;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Scanner;
@@ -70,6 +71,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     }
                     // Get the data
                     final String imageData = getImageData(path);
+                    // URLEncoder.encode(imageData, "UTF-8")
                     String dataStr = "{\"data\": " + "\"" + imageData + "\"}";
 
                     // Setup the request
@@ -77,11 +79,8 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setFixedLengthStreamingMode(dataStr.length());
                     conn.setRequestMethod("POST");
-                    conn.setRequestProperty("Accept", "*/*");
-                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0");
-                    conn.setRequestProperty("Connection", "keep-alive");
                     conn.setRequestProperty("Content-Type", "application/json");
-
+                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0");
                     // Send image data
                     conn.setDoOutput(true);
                     DataOutputStream os = new DataOutputStream(conn.getOutputStream());
@@ -295,15 +294,9 @@ public final class ML4K extends AndroidNonvisibleComponent {
      */
     private String getImageData(final String path) {
         try {
-            Scanner scanner = new Scanner(new FileReader(path));
-            StringBuilder sb = new StringBuilder();
-            while (scanner.hasNext()) {
-                sb.append(scanner.next());
-            }
-            scanner.close();
-            byte[] encodedBytes = Base64.getEncoder().encode(sb.toString().getBytes());
-            return new String(encodedBytes);
-        } catch (FileNotFoundException e) {
+            byte[] byteArray = Files.readAllBytes(new java.io.File(path).toPath());
+            return Base64.getEncoder().encodeToString(byteArray);
+        } catch (IOException e) {
             GotError(path, "File not found");
         }
         return "";
