@@ -11,7 +11,7 @@ if __name__ == '__main__':
     with open('com.kylecorry.ml4k/assets/api.txt', 'w+') as f:
         f.write(api_key)
 
-    if os.path.exists('com.kylecorry.ml4k.aix'):
-        os.remove('com.kylecorry.ml4k.aix')
+    if os.path.exists('ML4K.aix'):
+        os.remove('ML4K.aix')
     shutil.make_archive('com.kylecorry.ml4k', 'zip', base_dir = 'com.kylecorry.ml4k')
-    os.rename('com.kylecorry.ml4k.zip', 'com.kylecorry.ml4k.aix')
+    os.rename('com.kylecorry.ml4k.zip', 'ML4K.aix')

@@ -52,7 +52,9 @@ cd build
 python build_aix.py <API KEY>
 ```
 
-This will generate a com.kylecorry.ml4k.aix file which contains a preset API key. To do this without the Python script, the file com.kylecorry.ml4k/assets/api.txt needs to be modified to have the API key in it. Then the whole folder (com.kylecorry.ml4k directory needs to be present in the top level of the zip file) needs to be zipped and renamed to have the .aix extension instead of .zip.
+This will generate a ML4K.aix file which contains a preset API key.
+
+To do this without the Python script, the file com.kylecorry.ml4k/assets/api.txt needs to be modified to have the API key in it. Then the whole folder (com.kylecorry.ml4k directory needs to be present in the top level of the zip file) needs to be zipped and renamed to have the .aix extension instead of .zip.
 
 ## License
 This project is licensed under the [MIT License](LICENSE).
