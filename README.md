@@ -1,7 +1,7 @@
 # ML4K AppInventor Extension
 Use machine learning in AppInventor, with easy training using text, images, or numbers through the [Machine Learning for Kids](https://machinelearningforkids.co.uk/) website.
 
-[![Download (.aix)](examples/download.png)](https://github.com/kylecorry31/ML4K-AI-Extension/releases/download/v0.7-beta/ML4K.aix)
+[![Download (.aix)](examples/download.png)](https://github.com/kylecorry31/ML4K-AI-Extension/releases/download/v0.8-beta/ML4K.aix)
 
 ## Example
 
@@ -23,6 +23,9 @@ See example .aia projects in the examples directory of this repo (Created by [Jo
 Download the latest extension file (.aix) from the [releases](https://github.com/kylecorry31/ML4K-AI-Extension/releases) page and follow section "2. How to use extensions components" of [this website](http://ai2.appinventor.mit.edu/reference/other/extensions.html) to add the extension to your App Inventor project.
 
 ## Guide
+
+**If you received this extension from the ML4K website, your API key will be set for you and you don't need the block to set it - skip to step 3.**
+
 1. After installing the extension, you need to get an API key, which can be obtained from [Machine Learning for Kids](https://machinelearningforkids.co.uk/).
 
 2. Copy and paste the API Key into the ML4K component’s “Key” property on the Designer screen or use the "set Key" block on the Blocks screen. Note: API Key must be set before you can use any of the ML4K extension blocks for classification. If you choose to set the key using the “set Key” block, be sure to set the key in the Screen.Initialize event or any time before you use a classification method (purple block).
@@ -40,6 +43,16 @@ Download the latest extension file (.aix) from the [releases](https://github.com
 
 ### Handling Errors
 Upon an error, the "GotError" block will be called with the error that occurred.
+
+## Building with preset API key
+To build the extension, open a terminal and navigate to the build folder. Run the build_aix.py script, passing in the API key.
+
+```Shell
+cd build
+python build_aix.py <API KEY>
+```
+
+This will generate a com.kylecorry.ml4k.aix file which contains a preset API key. To do this without the Python script, the file com.kylecorry.ml4k/assets/api.txt needs to be modified to have the API key in it. Then the whole folder (com.kylecorry.ml4k directory needs to be present in the top level of the zip file) needs to be zipped and renamed to have the .aix extension instead of .zip.
 
 ## License
 This project is licensed under the [MIT License](LICENSE).
