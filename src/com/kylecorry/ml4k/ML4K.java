@@ -14,6 +14,7 @@ import com.google.appinventor.components.common.YaVersion;
 import com.google.appinventor.components.runtime.util.AsynchUtil;
 import com.google.appinventor.components.annotations.UsesPermissions;
 import com.google.appinventor.components.annotations.UsesLibraries;
+import com.google.appinventor.components.annotations.UsesAssets;
 
 import android.app.Activity;
 
@@ -31,6 +32,7 @@ import java.util.Scanner;
         category = ComponentCategory.EXTENSION,
         nonVisible = true,
         iconName = "aiwebres/ml4k.png")
+@UsesAssets(fileNames = "api.txt")
 @SimpleObject(external = true)
 @UsesPermissions(permissionNames = "android.permission.INTERNET")
 @UsesLibraries(libraries = "gson.jar")
@@ -41,9 +43,9 @@ public final class ML4K extends AndroidNonvisibleComponent {
 
     private final Activity activity;
 
-    private String key = "";
+    private String key = getKeyFromFile();
 
-    public ML4K(ComponentContainer container) {
+    public ML4K(ComponentContainer container) {
         super(container.$form());
         activity = container.$context();
     }
@@ -57,6 +59,17 @@ public final class ML4K extends AndroidNonvisibleComponent {
     @SimpleProperty
     public String Key() {
         return key;
+    }
+
+    public String getKeyFromFile(){
+        try {
+            InputStream inputStream = form.openAssetForExtension(ML4K.this, "api.txt");
+            Scanner scanner = new Scanner(inputStream);
+            return scanner.next();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 
     @SimpleFunction(description = "Get the classification for the image.")

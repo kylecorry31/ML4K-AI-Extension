@@ -1,0 +1,92 @@
+[{
+ "categoryString": "EXTENSION",
+ "nonVisible": "true",
+ "iconName": "aiwebres/ml4k.png",
+ "methods": [
+  {
+   "deprecated": "false",
+   "name": "ClassifyImage",
+   "description": "Get the classification for the image.",
+   "params": [{
+    "name": "path",
+    "type": "text"
+   }]
+  },
+  {
+   "deprecated": "false",
+   "name": "ClassifyNumbers",
+   "description": "Get the classification for the numbers.",
+   "params": [{
+    "name": "numbers",
+    "type": "list"
+   }]
+  },
+  {
+   "deprecated": "false",
+   "name": "ClassifyText",
+   "description": "Get the classification for the text.",
+   "params": [{
+    "name": "data",
+    "type": "text"
+   }]
+  }
+ ],
+ "blockProperties": [{
+  "rw": "read-write",
+  "deprecated": "false",
+  "name": "Key",
+  "description": "The API key for the ML4K app.",
+  "type": "text"
+ }],
+ "helpUrl": "",
+ "type": "com.kylecorry.ml4k.ML4K",
+ "androidMinSdk": 7,
+ "version": "4",
+ "external": "true",
+ "showOnPalette": "true",
+ "assets": ["api.txt"],
+ "name": "ML4K",
+ "helpString": "This provides an interface for the Machine Learning for Kids website.",
+ "properties": [{
+  "defaultValue": "",
+  "name": "Key",
+  "editorArgs": [],
+  "editorType": "string"
+ }],
+ "events": [
+  {
+   "deprecated": "false",
+   "name": "GotClassification",
+   "description": "Event indicating that a classification has finished.",
+   "params": [
+    {
+     "name": "data",
+     "type": "text"
+    },
+    {
+     "name": "classification",
+     "type": "text"
+    },
+    {
+     "name": "confidence",
+     "type": "number"
+    }
+   ]
+  },
+  {
+   "deprecated": "false",
+   "name": "GotError",
+   "description": "Event indicating that a classification got an error.",
+   "params": [
+    {
+     "name": "data",
+     "type": "text"
+    },
+    {
+     "name": "error",
+     "type": "text"
+    }
+   ]
+  }
+ ]
+}]
