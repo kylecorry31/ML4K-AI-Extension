@@ -45,16 +45,31 @@ Download the latest extension file (.aix) from the [releases](https://github.com
 Upon an error, the "GotError" block will be called with the error that occurred.
 
 ## Building with preset API key
-To build the extension, open a terminal and navigate to the build folder. Run the build_aix.py script, passing in the API key.
+To build the extension, open a terminal and navigate to the release folder. Run the build_aix.py script, passing in the API key.
 
 ```Shell
-cd build
+cd release
 python build_aix.py <API KEY>
 ```
 
 This will generate a ML4K.aix file which contains a preset API key.
 
 To do this without the Python script, the file com.kylecorry.ml4k/assets/api.txt needs to be modified to have the API key in it. Then the whole folder (com.kylecorry.ml4k directory needs to be present in the top level of the zip file) needs to be zipped and renamed to have the .aix extension instead of .zip.
+
+## Building from source
+To build the extension from sources, you can use the makefile (for Linux systems).
+
+### Requirements
+- make
+- ant
+- git
+
+### Building
+```shell
+make
+```
+
+This will create a directory called \_build/dist which will contain the .aix file (without an API key).
 
 ## License
 This project is licensed under the [MIT License](LICENSE).
