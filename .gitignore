@@ -1,2 +1,4 @@
 *.aix
 _build/
+dist/
+build/
