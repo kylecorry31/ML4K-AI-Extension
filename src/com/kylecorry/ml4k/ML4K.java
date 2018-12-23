@@ -313,7 +313,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
     private String getImageData(final String path) {
         try {
             byte[] byteArray = Files.readAllBytes(new java.io.File(path).toPath());
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.OREO) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
               return Base64.getEncoder().encodeToString(byteArray);
             } else {
               return Base64Encoder.encode(byteArray);
