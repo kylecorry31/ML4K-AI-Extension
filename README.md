@@ -57,16 +57,32 @@ This will generate a ML4K.aix file which contains a preset API key.
 To do this without the Python script, the file com.kylecorry.ml4k/assets/api.txt needs to be modified to have the API key in it. Then the whole folder (com.kylecorry.ml4k directory needs to be present in the top level of the zip file) needs to be zipped and renamed to have the .aix extension instead of .zip.
 
 ## Building from source
-To build the extension from sources, you can use the makefile (for Linux systems).
 
-### Requirements
+### Unix (Linux / Mac)
+To build the extension from sources, you can use the makefile.
+
+#### Requirements
 - make
 - ant
 - git
 
-### Building
+#### Building
 ```shell
 make
+```
+
+This will create a directory called \_build/dist which will contain the .aix file (without an API key).
+
+### Windows
+To build the extension from sources, you can use the build.bat.
+
+#### Requirements
+- ant
+- git
+
+#### Building
+```shell
+.\\build.bat
 ```
 
 This will create a directory called \_build/dist which will contain the .aix file (without an API key).
