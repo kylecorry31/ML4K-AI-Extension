@@ -312,16 +312,40 @@ public final class ML4K extends AndroidNonvisibleComponent {
      */
     private String getImageData(final String path) {
         try {
-            byte[] byteArray = Files.readAllBytes(new java.io.File(path).toPath());
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+              byte[] byteArray = Files.readAllBytes(new java.io.File(path).toPath());
               return Base64.getEncoder().encodeToString(byteArray);
             } else {
+              byte[] byteArray = readAllBytes(path);
               return Base64Encoder.encode(byteArray);
             }
         } catch (IOException e) {
             GotError(path, "File not found");
         }
         return "";
+    }
+
+    /**
+     * Reads all bytes from a file.
+     * @param filePath The path to the file.
+     * @return The file contents as bytes.
+     * @throws IOException upon error reading the input file.
+     */
+    private byte[] readAllBytes(String filePath) throws IOException {
+        java.io.File file = new java.io.File(filePath);
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        FileInputStream fis = new FileInputStream(file);
+        byte[] buff = new byte[4096];
+        int read;
+        while ((read = fis.read(buff)) != -1) {
+            byteArrayOutputStream.write(buff, 0, read);
+        }
+
+        byte[] out = byteArrayOutputStream.toByteArray();
+        byteArrayOutputStream.close();
+        fis.close();
+
+        return out;
     }
 
 
