@@ -15,9 +15,11 @@ import com.google.appinventor.components.runtime.util.AsynchUtil;
 import com.google.appinventor.components.annotations.UsesPermissions;
 import com.google.appinventor.components.annotations.UsesLibraries;
 import com.google.appinventor.components.annotations.UsesAssets;
+import com.google.appinventor.components.runtime.util.MediaUtil;
 
 import android.app.Activity;
 import android.os.Build;
+import android.net.Uri;
 
 import com.google.gson.*;
 
@@ -310,19 +312,50 @@ public final class ML4K extends AndroidNonvisibleComponent {
      * @param path The path to the image.
      * @return The data of the image as a base 64 string.
      */
-    private String getImageData(final String path) {
+    private String getImageData(String path) {
         try {
+
+            // if (MediaUtil.isExternalFileUrl(path)){
+            //   path = new java.io.File(new URL(path).toURI()).getAbsolutePath();
+            // }
+            //
+            java.io.File file = MediaUtil.copyMediaToTempFile(form, path);
+
+
+            byte[] byteArray = readAllBytes(new FileInputStream(file));
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-              byte[] byteArray = Files.readAllBytes(new java.io.File(path).toPath());
+              // byte[] byteArray = Files.readAllBytes(new java.io.File(path).toPath());
               return Base64.getEncoder().encodeToString(byteArray);
             } else {
-              byte[] byteArray = readAllBytes(path);
+              // byte[] byteArray = readAllBytes(path);
               return Base64Encoder.encode(byteArray);
             }
         } catch (IOException e) {
-            GotError(path, "File not found");
+          GotError(path, "File not found");
         }
         return "";
+    }
+
+    /**
+     * Reads all bytes from a file.
+     * @param is The input stream.
+     * @return The file contents as bytes.
+     * @throws IOException upon error reading the input file.
+     */
+    private byte[] readAllBytes(InputStream is) throws IOException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        byte[] buff = new byte[4096];
+        int read;
+        while ((read = is.read(buff)) != -1) {
+            byteArrayOutputStream.write(buff, 0, read);
+        }
+
+        byte[] out = byteArrayOutputStream.toByteArray();
+        byteArrayOutputStream.close();
+        is.close();
+
+        return out;
     }
 
     /**
