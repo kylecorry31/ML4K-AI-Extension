@@ -82,7 +82,7 @@ To build the extension from sources, you can use the build.bat.
 
 #### Building
 ```shell
-.\\build.bat
+.\build.bat
 ```
 
 This will create a directory called \_build/dist which will contain the .aix file (without an API key).
