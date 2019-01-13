@@ -21,8 +21,6 @@ import android.app.Activity;
 import android.os.Build;
 import android.net.Uri;
 
-import com.google.gson.*;
-
 import java.io.*;
 import java.net.*;
 import java.nio.file.Files;
@@ -38,7 +36,6 @@ import java.util.Scanner;
 @UsesAssets(fileNames = "api.txt")
 @SimpleObject(external = true)
 @UsesPermissions(permissionNames = "android.permission.INTERNET")
-@UsesLibraries(libraries = "gson.jar")
 public final class ML4K extends AndroidNonvisibleComponent {
 
     private static final String ENDPOINT_URL = "https://machinelearningforkids.co.uk/api/scratch/%s/classify";
@@ -114,11 +111,11 @@ public final class ML4K extends AndroidNonvisibleComponent {
                         conn.disconnect();
 
                         // Parse JSON
-                        try {
-                            Classification classification = Classification.fromJson(path, json);
-                            GotClassification(classification.data, classification.classification, classification.confidence);
-                        } catch (JsonParseException e) {
+                        Classification classification = Classification.fromJson(path, json);
+                        if (classification == null){
                             GotError(path, "Bad data from server: " + json);
+                        } else {
+                            GotClassification(classification.data, classification.classification, classification.confidence);
                         }
                     } else {
                         GotError(path, "Bad response from server: " + conn.getResponseCode());
@@ -163,11 +160,11 @@ public final class ML4K extends AndroidNonvisibleComponent {
                         conn.disconnect();
 
                         // Parse JSON
-                        try {
-                            Classification classification = Classification.fromJson(data, json);
-                            GotClassification(classification.data, classification.classification, classification.confidence);
-                        } catch (JsonParseException e) {
+                        Classification classification = Classification.fromJson(data, json);
+                        if (classification == null){
                             GotError(data, "Bad data from server: " + json);
+                        } else {
+                            GotClassification(classification.data, classification.classification, classification.confidence);
                         }
                     } else {
                         GotError(data, "Bad response from server: " + conn.getResponseCode());
@@ -216,11 +213,11 @@ public final class ML4K extends AndroidNonvisibleComponent {
                         conn.disconnect();
 
                         // Parse JSON
-                        try {
-                            Classification classification = Classification.fromJson(data, json);
-                            GotClassification(classification.data, classification.classification, classification.confidence);
-                        } catch (JsonParseException e) {
+                        Classification classification = Classification.fromJson(data, json);
+                        if (classification == null){
                             GotError(data, "Bad data from server: " + json);
+                        } else {
+                            GotClassification(classification.data, classification.classification, classification.confidence);
                         }
                     } else {
                         GotError(data, "Bad response from server: " + conn.getResponseCode());
@@ -422,13 +419,38 @@ public final class ML4K extends AndroidNonvisibleComponent {
             this.confidence = confidence;
         }
 
-        private static Classification fromJson(String data, String json) throws JsonParseException {
-            JsonElement jsonElement = new JsonParser().parse(json);
-            JsonArray jsonArray = jsonElement.getAsJsonArray();
-            JsonObject value = jsonArray.get(0).getAsJsonObject();
+        private static Classification fromJson(String data, String json) {
 
-            final String className = value.get("class_name").getAsString();
-            final double confidence = value.get("confidence").getAsDouble();
+            if (json == null){
+              return null;
+            }
+
+            int indexClassName = json.indexOf("class_name");
+            int indexConfidence = json.indexOf("confidence");
+
+            if (indexClassName == -1 || indexConfidence == -1){
+                return null;
+            }
+
+            int classNameStart = json.indexOf("\"", indexClassName + 12);
+            int classNameEnd = json.indexOf("\"", classNameStart + 1);
+
+            if (classNameStart >= json.length() || classNameEnd >= json.length()){
+                return null;
+            }
+
+            String className = json.substring(classNameStart + 1, classNameEnd);
+
+            int confidenceStart = json.indexOf(":", indexConfidence);
+            int confidenceEnd = json.indexOf(",", confidenceStart + 1);
+
+            if (confidenceStart >= json.length() || confidenceEnd >= json.length()){
+                return null;
+            }
+
+            String confidenceStr = json.substring(confidenceStart + 1, confidenceEnd).trim();
+            double confidence = Double.parseDouble(confidenceStr);
+
             return new Classification(data, className, confidence);
         }
 
