@@ -90,6 +90,10 @@ This will create a directory called \_build/dist which will contain the .aix fil
 ## License
 This project is licensed under the [MIT License](LICENSE).
 
+## Featured projects
+Here are some community contributed projects which demonstrate awesome uses of the ML4K extension. All credits belong to the creators of these projects:
+- [eFAP: Emotion Detector for Angry Players](https://youtu.be/LZ760BT8QmM)
+
 ## Credits
 * [The Machine Learning for Kids](https://github.com/IBM/taxinomitis) for providing the training tool and API endpoint.
 * [Kyle Corry (Me)](https://github.com/kylecorry31) for project planning, programming the extension, and testing.
