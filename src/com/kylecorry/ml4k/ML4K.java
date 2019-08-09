@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 @DesignerComponent(version = YaVersion.LABEL_COMPONENT_VERSION,
         description = "This provides an interface for the Machine Learning for Kids website.",
@@ -76,16 +77,31 @@ public final class ML4K extends AndroidNonvisibleComponent {
         }
     }
 
+    private final Pattern apiKeyPattern = Pattern.compile(
+        "[0-9a-f]{8}-[0-9a-f]{4}-[1][0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}" +
+        "[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}"
+    );
+
+    private void checkApiKey() throws ML4KException {
+        if (key == null || key.isEmpty()) {
+            throw new ML4KException("API key not set");
+        }
+        if (apiKeyPattern.matcher(key).matches() == false) {
+            throw new ML4KException("API key isn't a Machine Learning for Kids key");
+        }
+    }
+
+
+
     @SimpleFunction(description = "Get the classification for the image.")
     public void ClassifyImage(final String path) {
         runInBackground(new Runnable() {
             @Override
             public void run() {
                 try {
-                    if (key == null || key.isEmpty()) {
-                      GotError(path, "API key not set");
-                      return;
-                    }
+                    // check we have something that looks like a usable API key
+                    checkApiKey();
+
                     // Get the data
                     final String imageData = getImageData(path);
                     // URLEncoder.encode(imageData, "UTF-8")
@@ -122,6 +138,8 @@ public final class ML4K extends AndroidNonvisibleComponent {
                         conn.disconnect();
                     }
 
+                } catch (ML4KException e) {
+                    GotError(path, e.getMessage());
                 } catch (UnsupportedEncodingException e) {
                     GotError(path, "Could not encode image");
                 } catch (MalformedURLException e) {
@@ -140,10 +158,9 @@ public final class ML4K extends AndroidNonvisibleComponent {
             @Override
             public void run() {
                 try {
-                    if (key == null || key.isEmpty()) {
-                      GotError(data, "API key not set");
-                      return;
-                    }
+                    // check we have something that looks like a usable API key
+                    checkApiKey();
+
                     // Get the data
                     String urlStr = getURL() + "?data=" + URLEncoder.encode(data, "UTF-8");
 
@@ -171,6 +188,8 @@ public final class ML4K extends AndroidNonvisibleComponent {
                         conn.disconnect();
                     }
 
+                } catch (ML4KException e) {
+                    GotError(data, e.getMessage());
                 } catch (UnsupportedEncodingException e) {
                     GotError(data, "Could not encode text");
                 } catch (ProtocolException e) {
@@ -193,10 +212,9 @@ public final class ML4K extends AndroidNonvisibleComponent {
             public void run() {
                 final String data = numbers.toString();
                 try {
-                    if (key == null || key.isEmpty()) {
-                      GotError(data, "API key not set");
-                      return;
-                    }
+                    // check we have something that looks like a usable API key
+                    checkApiKey();
+
                     // Get the data
                     String urlStr = getURL() + "?" + urlEncodeList("data", numbers);
 
@@ -224,6 +242,8 @@ public final class ML4K extends AndroidNonvisibleComponent {
                         conn.disconnect();
                     }
 
+                } catch (ML4KException e) {
+                    GotError(data, e.getMessage());
                 } catch (UnsupportedEncodingException e) {
                     GotError(data, "Could not encode text");
                 } catch (ProtocolException e) {
