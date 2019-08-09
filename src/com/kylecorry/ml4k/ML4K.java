@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 @UsesPermissions(permissionNames = "android.permission.INTERNET")
 public final class ML4K extends AndroidNonvisibleComponent {
 
+	private static final String ML4K_USER_AGENT = "MIT App Inventor (ML4K extension)";
     private static final String ENDPOINT_URL = "https://machinelearningforkids.co.uk/api/scratch/%s/classify";
     private static final String DATA_KEY = "data";
 
@@ -113,7 +114,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     conn.setFixedLengthStreamingMode(dataStr.length());
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json");
-                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0");
+                    conn.setRequestProperty("User-Agent", ML4K_USER_AGENT);
                     // Send image data
                     conn.setDoOutput(true);
                     DataOutputStream os = new DataOutputStream(conn.getOutputStream());
@@ -169,7 +170,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("GET");
                     conn.setRequestProperty("Content-Type", "application/json");
-                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0");
+                    conn.setRequestProperty("User-Agent", ML4K_USER_AGENT);
 
                     // Parse
                     if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
@@ -223,7 +224,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("GET");
                     conn.setRequestProperty("Content-Type", "application/json");
-                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0");
+                    conn.setRequestProperty("User-Agent", ML4K_USER_AGENT);
 
                     // Parse
                     if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
