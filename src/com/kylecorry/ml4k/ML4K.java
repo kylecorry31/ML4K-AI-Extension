@@ -123,9 +123,10 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     os.close();
 
                     // Parse
-                    if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    final int responseCode = conn.getResponseCode();
+                    final String responseMessage = conn.getResponseMessage();
+                    if (responseCode == HttpURLConnection.HTTP_OK) {
                         final String json = read(conn.getInputStream());
-                        conn.disconnect();
 
                         // Parse JSON
                         Classification classification = Classification.fromJson(path, json);
@@ -135,9 +136,11 @@ public final class ML4K extends AndroidNonvisibleComponent {
                             GotClassification(classification.data, classification.classification, classification.confidence);
                         }
                     } else {
-                        GotError(path, "Bad response from server: " + conn.getResponseCode());
-                        conn.disconnect();
+                        final String json = read(conn.getErrorStream());
+                    	APIErrorResponse error = getErrorMessage(responseMessage, json);
+                        GotError(path, error.getError());
                     }
+                    conn.disconnect();
 
                 } catch (ML4KException e) {
                     GotError(path, e.getMessage());
@@ -173,11 +176,11 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     conn.setRequestProperty("User-Agent", ML4K_USER_AGENT);
 
                     // Parse
-                    if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                        final String json = read(conn.getInputStream());
-                        conn.disconnect();
-
+                    final int responseCode = conn.getResponseCode();
+                    final String responseMessage = conn.getResponseMessage();
+                    if (responseCode == HttpURLConnection.HTTP_OK) {
                         // Parse JSON
+                        final String json = read(conn.getInputStream());
                         Classification classification = Classification.fromJson(data, json);
                         if (classification == null){
                             GotError(data, "Bad data from server: " + json);
@@ -185,9 +188,11 @@ public final class ML4K extends AndroidNonvisibleComponent {
                             GotClassification(classification.data, classification.classification, classification.confidence);
                         }
                     } else {
-                        GotError(data, "Bad response from server: " + conn.getResponseCode());
-                        conn.disconnect();
+                        final String json = read(conn.getErrorStream());
+                    	APIErrorResponse error = getErrorMessage(responseMessage, json);
+                        GotError(data, error.getError());
                     }
+                    conn.disconnect();
 
                 } catch (ML4KException e) {
                     GotError(data, e.getMessage());
@@ -226,10 +231,10 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     conn.setRequestProperty("Content-Type", "application/json");
                     conn.setRequestProperty("User-Agent", ML4K_USER_AGENT);
 
-                    // Parse
-                    if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    final int responseCode = conn.getResponseCode();
+                    final String responseMessage = conn.getResponseMessage();
+                    if (responseCode == HttpURLConnection.HTTP_OK) {
                         final String json = read(conn.getInputStream());
-                        conn.disconnect();
 
                         // Parse JSON
                         Classification classification = Classification.fromJson(data, json);
@@ -239,9 +244,11 @@ public final class ML4K extends AndroidNonvisibleComponent {
                             GotClassification(classification.data, classification.classification, classification.confidence);
                         }
                     } else {
-                        GotError(data, "Bad response from server: " + conn.getResponseCode());
-                        conn.disconnect();
+                        final String json = read(conn.getErrorStream());
+                    	APIErrorResponse error = getErrorMessage(responseMessage, json);
+                        GotError(data, error.getError());
                     }
+                    conn.disconnect();
 
                 } catch (ML4KException e) {
                     GotError(data, e.getMessage());
@@ -259,6 +266,16 @@ public final class ML4K extends AndroidNonvisibleComponent {
             }
         });
     }
+
+
+    private APIErrorResponse getErrorMessage(String responseCode, String json) {
+        APIErrorResponse errorMessage = APIErrorResponse.fromJson(json);
+        if (errorMessage == null) {
+        	errorMessage = new APIErrorResponse("Bad response from server: " + responseCode);
+        }
+        return errorMessage;
+    }
+
 
     /**
      * Event indicating that a classification got an error.
@@ -426,6 +443,43 @@ public final class ML4K extends AndroidNonvisibleComponent {
         }
 
         return sb.toString();
+    }
+
+
+
+    private static class APIErrorResponse {
+    	private String error;
+    	private APIErrorResponse(String error) {
+    		this.error = error;
+    	}
+    	private String getError() {
+    		return this.error;
+    	}
+
+    	private static APIErrorResponse fromJson(String json) {
+    		int indexErrorMessage = json.indexOf("error");
+    		if (indexErrorMessage == -1) {
+    			return null;
+    		}
+
+    		int errorMessageStart = json.indexOf("\"", indexErrorMessage + "error".length() + 2);
+    		int errorMessageEnd = json.indexOf("\"", errorMessageStart + 1);
+
+    		if (errorMessageStart >= json.length() || errorMessageEnd >= json.length() ||
+    			errorMessageStart == -1 || errorMessageEnd == -1) {
+    			return null;
+    		}
+
+    		String error = json.substring(errorMessageStart + 1, errorMessageEnd);
+    		if (error.equals("Missing data")) {
+    			error = "Empty or invalid data sent to Machine Learning for Kids";
+    		}
+    		else if (error.equals("Scratch key not found")) {
+    			error = "Machine Learning for Kids API Key not recognised";
+    		}
+
+    		return new APIErrorResponse(error);
+    	}
     }
 
 
