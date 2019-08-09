@@ -39,7 +39,7 @@ import java.util.regex.Pattern;
 @UsesPermissions(permissionNames = "android.permission.INTERNET")
 public final class ML4K extends AndroidNonvisibleComponent {
 
-	private static final String ML4K_USER_AGENT = "MIT App Inventor (ML4K extension)";
+    private static final String ML4K_USER_AGENT = "MIT App Inventor (ML4K extension)";
     private static final String ENDPOINT_URL = "https://machinelearningforkids.co.uk/api/scratch/%s/classify";
     private static final String DATA_KEY = "data";
 
@@ -137,7 +137,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
                         }
                     } else {
                         final String json = read(conn.getErrorStream());
-                    	APIErrorResponse error = getErrorMessage(responseMessage, json);
+                        APIErrorResponse error = getErrorMessage(responseMessage, json);
                         GotError(path, error.getError());
                     }
                     conn.disconnect();
@@ -189,7 +189,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
                         }
                     } else {
                         final String json = read(conn.getErrorStream());
-                    	APIErrorResponse error = getErrorMessage(responseMessage, json);
+                        APIErrorResponse error = getErrorMessage(responseMessage, json);
                         GotError(data, error.getError());
                     }
                     conn.disconnect();
@@ -245,7 +245,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
                         }
                     } else {
                         final String json = read(conn.getErrorStream());
-                    	APIErrorResponse error = getErrorMessage(responseMessage, json);
+                        APIErrorResponse error = getErrorMessage(responseMessage, json);
                         GotError(data, error.getError());
                     }
                     conn.disconnect();
@@ -271,7 +271,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
     private APIErrorResponse getErrorMessage(String responseCode, String json) {
         APIErrorResponse errorMessage = APIErrorResponse.fromJson(json);
         if (errorMessage == null) {
-        	errorMessage = new APIErrorResponse("Bad response from server: " + responseCode);
+            errorMessage = new APIErrorResponse("Bad response from server: " + responseCode);
         }
         return errorMessage;
     }
@@ -448,38 +448,38 @@ public final class ML4K extends AndroidNonvisibleComponent {
 
 
     private static class APIErrorResponse {
-    	private String error;
-    	private APIErrorResponse(String error) {
-    		this.error = error;
-    	}
-    	private String getError() {
-    		return this.error;
-    	}
+        private String error;
+        private APIErrorResponse(String error) {
+            this.error = error;
+        }
+        private String getError() {
+            return this.error;
+        }
 
-    	private static APIErrorResponse fromJson(String json) {
-    		int indexErrorMessage = json.indexOf("error");
-    		if (indexErrorMessage == -1) {
-    			return null;
-    		}
+        private static APIErrorResponse fromJson(String json) {
+            int indexErrorMessage = json.indexOf("error");
+            if (indexErrorMessage == -1) {
+                return null;
+            }
 
-    		int errorMessageStart = json.indexOf("\"", indexErrorMessage + "error".length() + 2);
-    		int errorMessageEnd = json.indexOf("\"", errorMessageStart + 1);
+            int errorMessageStart = json.indexOf("\"", indexErrorMessage + "error".length() + 2);
+            int errorMessageEnd = json.indexOf("\"", errorMessageStart + 1);
 
-    		if (errorMessageStart >= json.length() || errorMessageEnd >= json.length() ||
-    			errorMessageStart == -1 || errorMessageEnd == -1) {
-    			return null;
-    		}
+            if (errorMessageStart >= json.length() || errorMessageEnd >= json.length() ||
+                errorMessageStart == -1 || errorMessageEnd == -1) {
+                return null;
+            }
 
-    		String error = json.substring(errorMessageStart + 1, errorMessageEnd);
-    		if (error.equals("Missing data")) {
-    			error = "Empty or invalid data sent to Machine Learning for Kids";
-    		}
-    		else if (error.equals("Scratch key not found")) {
-    			error = "Machine Learning for Kids API Key not recognised";
-    		}
+            String error = json.substring(errorMessageStart + 1, errorMessageEnd);
+            if (error.equals("Missing data")) {
+                error = "Empty or invalid data sent to Machine Learning for Kids";
+            }
+            else if (error.equals("Scratch key not found")) {
+                error = "Machine Learning for Kids API Key not recognised";
+            }
 
-    		return new APIErrorResponse(error);
-    	}
+            return new APIErrorResponse(error);
+        }
     }
 
 
