@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 @DesignerComponent(version = YaVersion.LABEL_COMPONENT_VERSION,
         description = "This provides an interface for the Machine Learning for Kids website.",
@@ -38,6 +39,7 @@ import java.util.Scanner;
 @UsesPermissions(permissionNames = "android.permission.INTERNET")
 public final class ML4K extends AndroidNonvisibleComponent {
 
+    private static final String ML4K_USER_AGENT = "MIT App Inventor (ML4K extension)";
     private static final String ENDPOINT_URL = "https://machinelearningforkids.co.uk/api/scratch/%s/classify";
     private static final String DATA_KEY = "data";
 
@@ -76,16 +78,31 @@ public final class ML4K extends AndroidNonvisibleComponent {
         }
     }
 
+    private final Pattern apiKeyPattern = Pattern.compile(
+        "[0-9a-f]{8}-[0-9a-f]{4}-[1][0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}" +
+        "[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}"
+    );
+
+    private void checkApiKey() throws ML4KException {
+        if (key == null || key.isEmpty()) {
+            throw new ML4KException("API key not set");
+        }
+        if (apiKeyPattern.matcher(key).matches() == false) {
+            throw new ML4KException("API key isn't a Machine Learning for Kids key");
+        }
+    }
+
+
+
     @SimpleFunction(description = "Get the classification for the image.")
     public void ClassifyImage(final String path) {
         runInBackground(new Runnable() {
             @Override
             public void run() {
                 try {
-                    if (key == null || key.isEmpty()) {
-                      GotError(path, "API key not set");
-                      return;
-                    }
+                    // check we have something that looks like a usable API key
+                    checkApiKey();
+
                     // Get the data
                     final String imageData = getImageData(path);
                     // URLEncoder.encode(imageData, "UTF-8")
@@ -97,7 +114,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     conn.setFixedLengthStreamingMode(dataStr.length());
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json");
-                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0");
+                    conn.setRequestProperty("User-Agent", ML4K_USER_AGENT);
                     // Send image data
                     conn.setDoOutput(true);
                     DataOutputStream os = new DataOutputStream(conn.getOutputStream());
@@ -106,9 +123,10 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     os.close();
 
                     // Parse
-                    if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    final int responseCode = conn.getResponseCode();
+                    final String responseMessage = conn.getResponseMessage();
+                    if (responseCode == HttpURLConnection.HTTP_OK) {
                         final String json = read(conn.getInputStream());
-                        conn.disconnect();
 
                         // Parse JSON
                         Classification classification = Classification.fromJson(path, json);
@@ -118,10 +136,14 @@ public final class ML4K extends AndroidNonvisibleComponent {
                             GotClassification(classification.data, classification.classification, classification.confidence);
                         }
                     } else {
-                        GotError(path, "Bad response from server: " + conn.getResponseCode());
-                        conn.disconnect();
+                        final String json = read(conn.getErrorStream());
+                        APIErrorResponse error = getErrorMessage(responseMessage, json);
+                        GotError(path, error.getError());
                     }
+                    conn.disconnect();
 
+                } catch (ML4KException e) {
+                    GotError(path, e.getMessage());
                 } catch (UnsupportedEncodingException e) {
                     GotError(path, "Could not encode image");
                 } catch (MalformedURLException e) {
@@ -140,10 +162,9 @@ public final class ML4K extends AndroidNonvisibleComponent {
             @Override
             public void run() {
                 try {
-                    if (key == null || key.isEmpty()) {
-                      GotError(data, "API key not set");
-                      return;
-                    }
+                    // check we have something that looks like a usable API key
+                    checkApiKey();
+
                     // Get the data
                     String urlStr = getURL() + "?data=" + URLEncoder.encode(data, "UTF-8");
 
@@ -152,14 +173,14 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("GET");
                     conn.setRequestProperty("Content-Type", "application/json");
-                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0");
+                    conn.setRequestProperty("User-Agent", ML4K_USER_AGENT);
 
                     // Parse
-                    if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                        final String json = read(conn.getInputStream());
-                        conn.disconnect();
-
+                    final int responseCode = conn.getResponseCode();
+                    final String responseMessage = conn.getResponseMessage();
+                    if (responseCode == HttpURLConnection.HTTP_OK) {
                         // Parse JSON
+                        final String json = read(conn.getInputStream());
                         Classification classification = Classification.fromJson(data, json);
                         if (classification == null){
                             GotError(data, "Bad data from server: " + json);
@@ -167,10 +188,14 @@ public final class ML4K extends AndroidNonvisibleComponent {
                             GotClassification(classification.data, classification.classification, classification.confidence);
                         }
                     } else {
-                        GotError(data, "Bad response from server: " + conn.getResponseCode());
-                        conn.disconnect();
+                        final String json = read(conn.getErrorStream());
+                        APIErrorResponse error = getErrorMessage(responseMessage, json);
+                        GotError(data, error.getError());
                     }
+                    conn.disconnect();
 
+                } catch (ML4KException e) {
+                    GotError(data, e.getMessage());
                 } catch (UnsupportedEncodingException e) {
                     GotError(data, "Could not encode text");
                 } catch (ProtocolException e) {
@@ -193,10 +218,9 @@ public final class ML4K extends AndroidNonvisibleComponent {
             public void run() {
                 final String data = numbers.toString();
                 try {
-                    if (key == null || key.isEmpty()) {
-                      GotError(data, "API key not set");
-                      return;
-                    }
+                    // check we have something that looks like a usable API key
+                    checkApiKey();
+
                     // Get the data
                     String urlStr = getURL() + "?" + urlEncodeList("data", numbers);
 
@@ -205,12 +229,12 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("GET");
                     conn.setRequestProperty("Content-Type", "application/json");
-                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0");
+                    conn.setRequestProperty("User-Agent", ML4K_USER_AGENT);
 
-                    // Parse
-                    if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    final int responseCode = conn.getResponseCode();
+                    final String responseMessage = conn.getResponseMessage();
+                    if (responseCode == HttpURLConnection.HTTP_OK) {
                         final String json = read(conn.getInputStream());
-                        conn.disconnect();
 
                         // Parse JSON
                         Classification classification = Classification.fromJson(data, json);
@@ -220,10 +244,14 @@ public final class ML4K extends AndroidNonvisibleComponent {
                             GotClassification(classification.data, classification.classification, classification.confidence);
                         }
                     } else {
-                        GotError(data, "Bad response from server: " + conn.getResponseCode());
-                        conn.disconnect();
+                        final String json = read(conn.getErrorStream());
+                        APIErrorResponse error = getErrorMessage(responseMessage, json);
+                        GotError(data, error.getError());
                     }
+                    conn.disconnect();
 
+                } catch (ML4KException e) {
+                    GotError(data, e.getMessage());
                 } catch (UnsupportedEncodingException e) {
                     GotError(data, "Could not encode text");
                 } catch (ProtocolException e) {
@@ -238,6 +266,16 @@ public final class ML4K extends AndroidNonvisibleComponent {
             }
         });
     }
+
+
+    private APIErrorResponse getErrorMessage(String responseCode, String json) {
+        APIErrorResponse errorMessage = APIErrorResponse.fromJson(json);
+        if (errorMessage == null) {
+            errorMessage = new APIErrorResponse("Bad response from server: " + responseCode);
+        }
+        return errorMessage;
+    }
+
 
     /**
      * Event indicating that a classification got an error.
@@ -405,6 +443,43 @@ public final class ML4K extends AndroidNonvisibleComponent {
         }
 
         return sb.toString();
+    }
+
+
+
+    private static class APIErrorResponse {
+        private String error;
+        private APIErrorResponse(String error) {
+            this.error = error;
+        }
+        private String getError() {
+            return this.error;
+        }
+
+        private static APIErrorResponse fromJson(String json) {
+            int indexErrorMessage = json.indexOf("error");
+            if (indexErrorMessage == -1) {
+                return null;
+            }
+
+            int errorMessageStart = json.indexOf("\"", indexErrorMessage + "error".length() + 2);
+            int errorMessageEnd = json.indexOf("\"", errorMessageStart + 1);
+
+            if (errorMessageStart >= json.length() || errorMessageEnd >= json.length() ||
+                errorMessageStart == -1 || errorMessageEnd == -1) {
+                return null;
+            }
+
+            String error = json.substring(errorMessageStart + 1, errorMessageEnd);
+            if (error.equals("Missing data")) {
+                error = "Empty or invalid data sent to Machine Learning for Kids";
+            }
+            else if (error.equals("Scratch key not found")) {
+                error = "Machine Learning for Kids API Key not recognised";
+            }
+
+            return new APIErrorResponse(error);
+        }
     }
 
 
