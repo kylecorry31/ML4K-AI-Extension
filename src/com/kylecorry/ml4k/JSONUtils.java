@@ -31,4 +31,16 @@ public class JSONUtils {
 
         return -1;
     }
+
+    public static double readRealProperty(String json, String propertyName){
+        String pattern = "\"" + propertyName + "\"\\s*:\\s*([\\d.]+)";
+        Pattern compiled = Pattern.compile(pattern);
+
+        Matcher matches = compiled.matcher(json);
+        if (matches.find()){
+            return Double.parseDouble(matches.group(0));
+        }
+
+        return -1;
+    }
 }

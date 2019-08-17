@@ -9,11 +9,11 @@ public class ModelStatus {
         this.message = message;
     }
 
-    public static ModelStatus fromJson(String json){
+    public static ModelStatus fromJson(String json) throws ML4KException {
         int code = JSONUtils.readIntProperty(json, "status");
         String message = JSONUtils.readStringProperty(json, "msg");
         if (message == null){
-            return null;
+            throw new ML4KException("JSON is not valid: " + json);
         }
         return new ModelStatus(code, message);
     }
