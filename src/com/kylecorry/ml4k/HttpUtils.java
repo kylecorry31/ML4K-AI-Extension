@@ -9,7 +9,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Scanner;
 
-class HttpUtils {
+class HttpUtils { // TODO: Make this into an interface for testing
 
     private static final String ML4K_USER_AGENT = "MIT App Inventor (ML4K extension)";
 

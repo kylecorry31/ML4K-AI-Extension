@@ -61,23 +61,6 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
         return key;
     }
 
-    public String getKeyFromFile(){
-        try {
-            InputStream inputStream = form.openAssetForExtension(ML4KComponent.this, "api.txt");
-            Scanner scanner = new Scanner(inputStream);
-            if (scanner.hasNext()){
-              return scanner.next();
-            } else {
-              return "";
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "";
-        }
-    }
-
-
-
     @SimpleFunction(description = "Get the classification for the image.")
     public void ClassifyImage(final String path) {
         runInBackground(new Runnable() {
@@ -86,7 +69,7 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                 try {
                     final java.io.File image = loadImageFile(path);
                     ML4K ml4k = new ML4K(key);
-                    Classification classification = ml4k.classifyImage(image);
+                    Classification classification = ml4k.classify(image);
                     GotClassification(path, classification.getClassification(), classification.getConfidence());
                 } catch (ML4KException e) {
                     GotError(path, e.getMessage());
@@ -102,7 +85,7 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
             public void run() {
                 try {
                     ML4K ml4k = new ML4K(key);
-                    Classification classification = ml4k.classifyText(data);
+                    Classification classification = ml4k.classify(data);
                     GotClassification(data, classification.getClassification(), classification.getConfidence());
                 } catch (ML4KException e) {
                     GotError(data, e.getMessage());
@@ -117,14 +100,9 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
             @Override
             public void run() {
                 final String data = numbers.toString();
-                List<Double> numbersList = new ArrayList<Double>(numbers.size());
-                for (int i = 0; i < numbers.size(); i++){
-                    String s = numbers.getString(i);
-                    numbersList.add(Double.parseDouble(s));
-                }
                 try {
                     ML4K ml4k = new ML4K(key);
-                    Classification classification = ml4k.classifyNumbers(numbersList);
+                    Classification classification = ml4k.classify(convertYailListToDouble(numbers));
                 } catch (ML4KException e) {
                     GotError(data, e.getMessage());
                 }
@@ -132,43 +110,68 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
         });
     }
 
-
     @SimpleFunction(description = "Train new machine learning model")
     public void TrainNewModel() {
-       runInBackground(new Runnable() {
-        @Override
-        public void run() {
-            try {
-                ML4K ml4k = new ML4K(key);
-                ml4k.train();
-            } catch (ML4KException e) {
-                GotError("train", e.getMessage());
+        runInBackground(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ML4K ml4k = new ML4K(key);
+                    ml4k.train();
+                } catch (ML4KException e) {
+                    GotError("train", e.getMessage());
+                }
             }
-        }
-    });
-
+        });
     }
 
-    // @SimpleFunction(description = "Adds training data to the model")
-    // public void AddTrainingData(String label, String data) {
-    //   // TODO: Implement this, must detect type of data (list, string, image) - might have to either overload or rename methods
-    //   // Post to /api/scratch/:scratchkey/train
-    //   // Payload: {"data": "...", "label": "..."}
-    // }
-
     @SimpleFunction(description = "Adds an image training data to the model")
-    public void AddImageTrainingData(String label, String path) {
-        // TODO: Implement this
+    public void AddImageTrainingData(final String label, final String path) {
+        runInBackground(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    java.io.File image = loadImageFile(path);
+                    if (image == null){
+                        throw new ML4KException("Could not load image");
+                    }
+                    ML4K ml4k = new ML4K(key);
+                    ml4k.addTrainingData(label, image);
+                } catch (ML4KException e) {
+                    GotError("train", e.getMessage());
+                }
+            }
+        });
     }
 
     @SimpleFunction(description = "Adds a text training data to the model")
-    public void AddTextTrainingData(String label, String text) {
-        // TODO: Implement this
+    public void AddTextTrainingData(final String label, final String text) {
+        runInBackground(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ML4K ml4k = new ML4K(key);
+                    ml4k.addTrainingData(label, text);
+                } catch (ML4KException e) {
+                    GotError("train", e.getMessage());
+                }
+            }
+        });
     }
 
     @SimpleFunction(description = "Adds numbers training data to the model")
-    public void AddNumbersTrainingData(String label, YailList numbers){
-        // TODO: Implement this
+    public void AddNumbersTrainingData(final String label, final YailList numbers){
+        runInBackground(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ML4K ml4k = new ML4K(key);
+                    ml4k.addTrainingData(label, convertYailListToDouble(numbers));
+                } catch (ML4KException e) {
+                    GotError("train", e.getMessage());
+                }
+            }
+        });
     }
 
     @SimpleFunction(description = "Gets the status of the model")
@@ -195,15 +198,8 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
      */
     @SimpleEvent
     public void GotStatus(final int statusCode, final String message) {
-        final Component component = this;
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                EventDispatcher.dispatchEvent(component, "GotStatus", statusCode, message);
-            }
-        });
+        broadcastEvent("GotStatus", statusCode, message);
     }
-
 
     /**
      * Event indicating that a classification got an error.
@@ -213,13 +209,7 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
      */
     @SimpleEvent
     public void GotError(final String data, final String error) {
-        final Component component = this;
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                EventDispatcher.dispatchEvent(component, "GotError", data, error);
-            }
-        });
+        broadcastEvent("GotError", data, error);
     }
 
     /**
@@ -231,16 +221,39 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
      */
     @SimpleEvent
     public void GotClassification(final String data, final String classification, final double confidence) {
+        broadcastEvent("GotClassification", data, classification, confidence);
+    }
+
+    // Helpers
+
+    /**
+     * Broadcasts an event on the UI thread
+     * @param eventName the name of the event
+     * @param data the data of the event
+     */
+    private void broadcastEvent(final String eventName, final Object...data){
         final Component component = this;
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                EventDispatcher.dispatchEvent(component, "GotClassification", data, classification, confidence);
+                EventDispatcher.dispatchEvent(component, eventName, data);
             }
         });
     }
 
-    // Helpers
+    /**
+     * Converts a Yail List to a double list
+     * @param list the list
+     * @return the double list
+     */
+    private List<Double> convertYailListToDouble(YailList list){
+        List<Double> numbersList = new ArrayList<Double>(list.size());
+        for (int i = 0; i < list.size(); i++){
+            String s = list.getString(i);
+            numbersList.add(Double.parseDouble(s));
+        }
+        return numbersList;
+    }
 
     /**
      * Turn the data of an image into base 64.
@@ -258,26 +271,28 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
     }
 
     /**
-     * Reads all bytes from a file.
-     * @param is The input stream.
-     * @return The file contents as bytes.
-     * @throws IOException upon error reading the input file.
+     * Loads the key from api.txt if exists
+     * @return the API key
      */
-    private byte[] readAllBytes(InputStream is) throws IOException {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        byte[] buff = new byte[4096];
-        int read;
-        while ((read = is.read(buff)) != -1) {
-            byteArrayOutputStream.write(buff, 0, read);
+    private String getKeyFromFile(){
+        try {
+            InputStream inputStream = form.openAssetForExtension(ML4KComponent.this, "api.txt");
+            Scanner scanner = new Scanner(inputStream);
+            if (scanner.hasNext()){
+              return scanner.next();
+            } else {
+              return "";
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
         }
-
-        byte[] out = byteArrayOutputStream.toByteArray();
-        byteArrayOutputStream.close();
-        is.close();
-
-        return out;
     }
 
+    /**
+     * Runs a function in the background
+     * @param runnable the runnable object
+     */
     private void runInBackground(Runnable runnable) {
         AsynchUtil.runAsynchronously(runnable);
     }

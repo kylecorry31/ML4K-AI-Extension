@@ -10,13 +10,18 @@ import java.net.URLEncoder;
 import java.util.List;
 import java.util.regex.Pattern;
 
-class ML4K {
+/**
+ * The ML4K API
+ */
+public class ML4K {
 
     private static final String BASE_URL = "https://machinelearningforkids.co.uk/api/scratch/%s";
     private static final String CLASSIFY_ENDPOINT = "/classify";
     private static final String MODELS_ENDPOINT = "/model";
     private static final String TRAIN_ENDPOINT = "/train";
     private static final String STATUS_ENDPOINT = "/status";
+
+    private HttpStrategy http;
 
     private final Pattern apiKeyPattern = Pattern.compile(
         "[0-9a-f]{8}-[0-9a-f]{4}-[1][0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}" +
@@ -25,13 +30,19 @@ class ML4K {
 
     private String apiKey;
 
+    /**
+     * Default constructor
+     * @param apiKey the API key
+     * @throws ML4KException if the API key is invalid
+     */
     public ML4K(String apiKey) throws ML4KException {
         setAPIKey(apiKey);
+        http = new HttpImpl();
     }
 
     /**
      * @param apiKey the ML4K API key
-     * @throws ML4KException if the API key is not valid
+     * @throws ML4KException if the API key is invalid
      */
     public void setAPIKey(String apiKey) throws ML4KException {
         if (apiKey == null || apiKey.isEmpty()) {
@@ -47,15 +58,15 @@ class ML4K {
 
     /**
      * Classify an image
-     * @param base64Image the base64 encoded image
+     * @param image the image
      * @return the classification of the image
      * @throws ML4KException when an error occurs
      */
-    public Classification classifyImage(File image) throws ML4KException {
+    public Classification classify(File image) throws ML4KException {
         try {
             String dataStr = "{\"data\": " + "\"" + ImageEncoder.encode(image) + "\"}";
             URL url = new URL(getBaseURL() + CLASSIFY_ENDPOINT);
-            HttpUtils.Response res = HttpUtils.postJSON(url, dataStr);
+            APIResponse res = http.postJSON(url, dataStr);
 
             if (res.isOK()) {
                 return Classification.fromJson(res.getBody());
@@ -78,11 +89,11 @@ class ML4K {
      * @return the classification of the text
      * @throws ML4KException when an error occurs
      */
-    public Classification classifyText(String text) throws ML4KException {
+    public Classification classify(String text) throws ML4KException {
         try {
             String urlStr = getBaseURL() + CLASSIFY_ENDPOINT + "?data=" + URLEncoder.encode(text, "UTF-8");
             URL url = new URL(urlStr);
-            HttpUtils.Response res = HttpUtils.getJSON(url);
+            APIResponse res = http.getJSON(url);
             
             if (res.isOK()) {
                 return Classification.fromJson(res.getBody());
@@ -105,11 +116,11 @@ class ML4K {
      * @return the classification of the numbers
      * @throws ML4KException when an error occurs
      */
-    public Classification classifyNumbers(List<Double> numbers) throws ML4KException {
+    public Classification classify(List<Double> numbers) throws ML4KException {
         try {
             String urlStr = getBaseURL() + CLASSIFY_ENDPOINT + "?" + urlEncodeList("data", numbers);
             URL url = new URL(urlStr);
-            HttpUtils.Response res = HttpUtils.getJSON(url);
+            APIResponse res = http.getJSON(url);
             
             if (res.isOK()) {
                 return Classification.fromJson(res.getBody());
@@ -127,6 +138,56 @@ class ML4K {
         }
     }
 
+    /**
+     * Adds text training data
+     * @param label the label of the data
+     * @param text the data
+     * @throws ML4KException if there is an error
+     */
+    public void addTrainingData(String label, String text) throws ML4KException {
+        try {
+            URL url = new URL(getBaseURL() + TRAIN_ENDPOINT);
+            APIResponse res = http.postJSON(url, "{ \"data\": \"" + text + "\", \"label\": \"" + label + "\" }");
+            
+            if (res.isOK()) {
+                // Do nothing
+            } else {
+                APIErrorResponse response = APIErrorResponse.fromJson(res.getBody());
+                throw new ML4KException(response == null ? "Bad response from server: " + res.getResponseCode() : response.getError());
+            }
+        } catch (UnsupportedEncodingException e) {
+            throw new ML4KException("Could not encode numbers");
+        } catch (MalformedURLException e) {
+            throw new ML4KException("Could not generate URL");
+        } catch (IOException e) {
+            throw new ML4KException("No Internet connection.");
+        }
+    }
+
+    /**
+     * Adds image training data
+     * @param label the label of the data
+     * @param image the data
+     * @throws ML4KException if there is an error
+     */
+    public void addTrainingData(String label, File image) throws ML4KException {
+        try {
+            addTrainingData(label, ImageEncoder.encode(image));
+        } catch (IOException e) {
+            throw new ML4KException("Could not encode image");
+        }
+    }
+
+    /**
+     * Adds numbers training data
+     * @param label the label of the data
+     * @param numbers the data
+     * @throws ML4KException if there is an error
+     */
+    public void addTrainingData(String label, List<Double> numbers) throws ML4KException {
+        addTrainingData(label, numbers.toString()); // TODO: this might not be right
+    }
+
 
     /**
      * @return the model's status
@@ -135,7 +196,7 @@ class ML4K {
     public ModelStatus getModelStatus() throws ML4KException {
         try{
             URL url = new URL(getBaseURL() + STATUS_ENDPOINT);
-            HttpUtils.Response res = HttpUtils.getJSON(url);
+            APIResponse res = http.getJSON(url);
          
             if (res.isOK()) {
                 return ModelStatus.fromJson(res.getBody());
@@ -158,7 +219,7 @@ class ML4K {
     public void train() throws ML4KException {
         try {
             URL url = new URL(getBaseURL() + MODELS_ENDPOINT);
-            HttpUtils.Response res = HttpUtils.postJSON(url, "");
+            APIResponse res = http.postJSON(url, "");
             
             if (res.isOK()) {
                 // Do nothing
@@ -204,6 +265,14 @@ class ML4K {
         }
 
         return sb.toString();
+    }
+
+
+    // For testing
+
+
+    void setHttpStrategy(HttpStrategy http){
+        this.http = http;
     }
 
 }
