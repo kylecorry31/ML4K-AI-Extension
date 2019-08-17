@@ -40,7 +40,10 @@ import java.util.regex.Pattern;
 public final class ML4K extends AndroidNonvisibleComponent {
 
     private static final String ML4K_USER_AGENT = "MIT App Inventor (ML4K extension)";
-    private static final String ENDPOINT_URL = "https://machinelearningforkids.co.uk/api/scratch/%s/classify";
+    private static final String BASE_URL = "https://machinelearningforkids.co.uk/api/scratch/%s";
+    private static final String CLASSIFY_ENDPOINT = "/classify";
+    private static final String MODELS_ENDPOINT = "/model";
+    private static final String TRAIN_ENDPOINT = "/train";
     private static final String DATA_KEY = "data";
 
     private final Activity activity;
@@ -109,39 +112,21 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     String dataStr = "{\"data\": " + "\"" + imageData + "\"}";
 
                     // Setup the request
-                    URL url = new URL(getURL());
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setFixedLengthStreamingMode(dataStr.length());
-                    conn.setRequestMethod("POST");
-                    conn.setRequestProperty("Content-Type", "application/json");
-                    conn.setRequestProperty("User-Agent", ML4K_USER_AGENT);
-                    // Send image data
-                    conn.setDoOutput(true);
-                    DataOutputStream os = new DataOutputStream(conn.getOutputStream());
-                    os.writeBytes(dataStr);
-                    os.flush();
-                    os.close();
+                    URL url = new URL(getURL() + CLASSIFY_ENDPOINT);
+                    HttpResponse res = postJSON(url, dataStr);
 
-                    // Parse
-                    final int responseCode = conn.getResponseCode();
-                    final String responseMessage = conn.getResponseMessage();
-                    if (responseCode == HttpURLConnection.HTTP_OK) {
-                        final String json = read(conn.getInputStream());
-
+                    if (res.isOK()) {
                         // Parse JSON
-                        Classification classification = Classification.fromJson(path, json);
+                        Classification classification = Classification.fromJson(path, res.getBody());
                         if (classification == null){
-                            GotError(path, "Bad data from server: " + json);
+                            GotError(path, "Bad data from server: " + res.getBody());
                         } else {
                             GotClassification(classification.data, classification.classification, classification.confidence);
                         }
                     } else {
-                        final String json = read(conn.getErrorStream());
-                        APIErrorResponse error = getErrorMessage(responseMessage, json);
+                        APIErrorResponse error = getErrorMessage(res.getResponseMessage(), res.getBody());
                         GotError(path, error.getError());
                     }
-                    conn.disconnect();
-
                 } catch (ML4KException e) {
                     GotError(path, e.getMessage());
                 } catch (UnsupportedEncodingException e) {
@@ -166,34 +151,24 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     checkApiKey();
 
                     // Get the data
-                    String urlStr = getURL() + "?data=" + URLEncoder.encode(data, "UTF-8");
+                    String urlStr = getURL() + CLASSIFY_ENDPOINT + "?data=" + URLEncoder.encode(data, "UTF-8");
 
                     // Setup the request
                     URL url = new URL(urlStr);
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setRequestMethod("GET");
-                    conn.setRequestProperty("Content-Type", "application/json");
-                    conn.setRequestProperty("User-Agent", ML4K_USER_AGENT);
-
-                    // Parse
-                    final int responseCode = conn.getResponseCode();
-                    final String responseMessage = conn.getResponseMessage();
-                    if (responseCode == HttpURLConnection.HTTP_OK) {
+                    HttpResponse res = getJSON(url);
+                    
+                    if (res.isOK()) {
                         // Parse JSON
-                        final String json = read(conn.getInputStream());
-                        Classification classification = Classification.fromJson(data, json);
+                        Classification classification = Classification.fromJson(data, res.getBody();
                         if (classification == null){
-                            GotError(data, "Bad data from server: " + json);
+                            GotError(data, "Bad data from server: " + res.getBody());
                         } else {
                             GotClassification(classification.data, classification.classification, classification.confidence);
                         }
                     } else {
-                        final String json = read(conn.getErrorStream());
-                        APIErrorResponse error = getErrorMessage(responseMessage, json);
+                        APIErrorResponse error = getErrorMessage(res.getResponseMessage(), res.getBody());
                         GotError(data, error.getError());
                     }
-                    conn.disconnect();
-
                 } catch (ML4KException e) {
                     GotError(data, e.getMessage());
                 } catch (UnsupportedEncodingException e) {
@@ -222,33 +197,24 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     checkApiKey();
 
                     // Get the data
-                    String urlStr = getURL() + "?" + urlEncodeList("data", numbers);
+                    String urlStr = getURL() + CLASSIFY_ENDPOINT + "?" + urlEncodeList("data", numbers);
 
                     // Setup the request
                     URL url = new URL(urlStr);
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setRequestMethod("GET");
-                    conn.setRequestProperty("Content-Type", "application/json");
-                    conn.setRequestProperty("User-Agent", ML4K_USER_AGENT);
-
-                    final int responseCode = conn.getResponseCode();
-                    final String responseMessage = conn.getResponseMessage();
-                    if (responseCode == HttpURLConnection.HTTP_OK) {
-                        final String json = read(conn.getInputStream());
-
+                    HttpResponse res = getJSON(url);
+                    
+                    if (res.isOK()) {
                         // Parse JSON
-                        Classification classification = Classification.fromJson(data, json);
+                        Classification classification = Classification.fromJson(data, res.getBody());
                         if (classification == null){
-                            GotError(data, "Bad data from server: " + json);
+                            GotError(data, "Bad data from server: " + res.getBody());
                         } else {
                             GotClassification(classification.data, classification.classification, classification.confidence);
                         }
                     } else {
-                        final String json = read(conn.getErrorStream());
-                        APIErrorResponse error = getErrorMessage(responseMessage, json);
+                        APIErrorResponse error = getErrorMessage(res.getResponseMessage(), res.getBody());
                         GotError(data, error.getError());
                     }
-                    conn.disconnect();
 
                 } catch (ML4KException e) {
                     GotError(data, e.getMessage());
@@ -268,23 +234,94 @@ public final class ML4K extends AndroidNonvisibleComponent {
     }
 
 
+    private static HttpResponse getJSON(final URL url) { // TODO: Handle IO exceptions
+      HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+      conn.setRequestMethod("GET");
+      conn.setRequestProperty("Content-Type", "application/json");
+      conn.setRequestProperty("User-Agent", ML4K_USER_AGENT);
+
+      // Get response
+      HttpResponse res = HttpResponse.fromConnection(conn);
+      conn.disconnect();
+      return res;
+    }
+
+    private static HttpResponse postJSON(final URL url, final String data) { // TODO: Handle IO exceptions
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setFixedLengthStreamingMode(data.length());
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("User-Agent", ML4K_USER_AGENT);
+
+        // Write the post data
+        conn.setDoOutput(true);
+        DataOutputStream os = new DataOutputStream(conn.getOutputStream());
+        os.writeBytes(data);
+        os.flush();
+        os.close();
+
+        // Get response
+        HttpResponse res = HttpResponse.fromConnection(conn);
+        conn.disconnect();
+        return res;
+    }
+
+
 
     @SimpleFunction(description = "Train new machine learning model")
     public void TrainNewModel() {
-      // TODO: Implement this
-      // Post to /api/scratch/:scratchkey/models
+       // TODO: Implement this
+       // POST request to /api/scratch/:scratchkey/models 
     }
 
     @SimpleFunction(description = "Adds training data to the model")
-    public void AddTrainingData() {
-      // TODO: Implement this
+    public void AddTrainingData(String label, String data) {
+      // TODO: Implement this, must detect type of data (list, string, image)
       // Post to /api/scratch/:scratchkey/train
       // Payload: {"data": "...", "label": "..."}
     }
 
     @SimpleFunction(description = "Gets the status of the model")
     public void GetModelStatus() {
-      // GET /api/scratch/:scratchkey/status
+        runInBackground(new Runnable() {
+            @Override
+            public void run() {
+                final String STATUS_KEY = "status";
+                try {
+                    // check we have something that looks like a usable API key
+                    checkApiKey();
+
+                    // Get the data
+                    String urlStr = getURL() + MODELS_ENDPOINT;
+
+                    // Setup the request
+                    URL url = new URL(urlStr);
+                    HttpResponse res = getJSON(url);
+                    
+                    if (res.isOK()) {
+                        // Parse JSON
+                        ModelStatus modelStatus = ModelStatus.fromJson(res.getBody());
+                        GotStatus(modelStatus.getStatusCode(), modelStatus.getMessage());
+                    } else {
+                        APIErrorResponse error = getErrorMessage(res.getResponseMessage(), res.getBody());
+                        GotError(STATUS_KEY, error.getError());
+                    }
+
+                } catch (ML4KException e) {
+                    GotError(STATUS_KEY, e.getMessage());
+                } catch (UnsupportedEncodingException e) {
+                    GotError(STATUS_KEY, "Could not encode text");
+                } catch (ProtocolException e) {
+                    e.printStackTrace();
+                } catch (MalformedURLException e) {
+                    GotError(STATUS_KEY, "Could not generate URL");
+                } catch (IOException e) {
+                    GotError(STATUS_KEY, "No Internet connection.");
+                }
+
+
+            }
+        });
     }
 
     /**
@@ -358,7 +395,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
      * @param is The input stream.
      * @return The data from the input stream as a String.
      */
-    private String read(InputStream is) {
+    private static String read(InputStream is) {
         Scanner scanner = new Scanner(is);
 
         StringBuilder sb = new StringBuilder();
@@ -371,12 +408,12 @@ public final class ML4K extends AndroidNonvisibleComponent {
     }
 
     /**
-     * Get the ENDPOINT_URL for ML4K.
+     * Get the base URL for ML4K.
      *
-     * @return The ENDPOINT_URL with the key for ML4K.
+     * @return The base URL with the key for ML4K.
      */
     private String getURL() {
-        return String.format(ENDPOINT_URL, key);
+        return String.format(BASE_URL, key);
     }
 
     /**
@@ -518,6 +555,54 @@ public final class ML4K extends AndroidNonvisibleComponent {
 
             return new APIErrorResponse(error);
         }
+    }
+
+    private static class HttpResponse {
+      private String responseMessage;
+      private int responseCode;
+      private String body;
+
+      private HttpResponse(int responseCode, String responseMessage, String body) {
+        this.responseCode = responseCode;
+        this.responseMessage = responseMessage;
+        this.body = body;
+      }
+
+      private static HttpResponse fromConnection(HttpURLConnection conn) {
+        final int responseCode = conn.getResponseCode();
+        final String responseMessage = conn.getResponseMessage();
+
+        String body;
+
+        if (responseCode == HttpURLConnection.HTTP_OK){
+            body = read(conn.getInputStream());
+        } else {
+            body = read(conn.getErrorStream());
+        }
+
+        return new HttpResponse(responseCode, responseMessage, body);
+      }
+
+      public String getResponseMessage(){
+        return responseMessage;
+      }
+
+      public int getResponseCode(){
+        return responseCode;
+      }
+
+      public String getBody(){
+        return body;
+      }
+
+      public boolean isOK(){
+          return responseCode == HttpURLConnection.HTTP_OK;
+      }
+
+      public boolean isError(){
+          return !isOK();
+      }
+
     }
 
 
