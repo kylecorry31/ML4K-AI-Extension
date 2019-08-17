@@ -268,6 +268,44 @@ public final class ML4K extends AndroidNonvisibleComponent {
     }
 
 
+
+    @SimpleFunction(description = "Train new machine learning model")
+    public void TrainNewModel() {
+      // TODO: Implement this
+      // Post to /api/scratch/:scratchkey/models
+    }
+
+    @SimpleFunction(description = "Adds training data to the model")
+    public void AddTrainingData() {
+      // TODO: Implement this
+      // Post to /api/scratch/:scratchkey/train
+      // Payload: {"data": "...", "label": "..."}
+    }
+
+    @SimpleFunction(description = "Gets the status of the model")
+    public void GetModelStatus() {
+      // GET /api/scratch/:scratchkey/status
+    }
+
+    /**
+     * Event fired when the status check completes.
+     *
+     * @param statusCode  The status code of the model (2 = ready, 1 = training, 0 = error)
+     * @param message     The status message of the model
+     */
+    @SimpleEvent
+    public void GotStatus(final int statusCode, final String message) {
+        final Component component = this;
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                EventDispatcher.dispatchEvent(component, "GotStatus", statusCode, message);
+            }
+        });
+    }
+
+
+
     private APIErrorResponse getErrorMessage(String responseCode, String json) {
         APIErrorResponse errorMessage = APIErrorResponse.fromJson(json);
         if (errorMessage == null) {
