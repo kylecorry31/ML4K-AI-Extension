@@ -160,7 +160,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     
                     if (res.isOK()) {
                         // Parse JSON
-                        Classification classification = Classification.fromJson(data, res.getBody();
+                        Classification classification = Classification.fromJson(data, res.getBody());
                         if (classification == null){
                             GotError(data, "Bad data from server: " + res.getBody());
                         } else {
@@ -235,7 +235,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
     }
 
 
-    private static HttpResponse getJSON(final URL url) { // TODO: Handle IO exceptions
+    private static HttpResponse getJSON(final URL url) throws IOException { // TODO: Handle IO exceptions
       HttpURLConnection conn = (HttpURLConnection) url.openConnection();
       conn.setRequestMethod("GET");
       conn.setRequestProperty("Content-Type", "application/json");
@@ -247,7 +247,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
       return res;
     }
 
-    private static HttpResponse postJSON(final URL url, final String data) { // TODO: Handle IO exceptions
+    private static HttpResponse postJSON(final URL url, final String data) throws IOException { // TODO: Handle IO exceptions
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setFixedLengthStreamingMode(data.length());
         conn.setRequestMethod("POST");
@@ -601,7 +601,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
         this.body = body;
       }
 
-      private static HttpResponse fromConnection(HttpURLConnection conn) {
+      private static HttpResponse fromConnection(HttpURLConnection conn) throws IOException {
         final int responseCode = conn.getResponseCode();
         final String responseMessage = conn.getResponseMessage();
 
