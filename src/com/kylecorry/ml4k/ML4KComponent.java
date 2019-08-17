@@ -84,9 +84,9 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
             @Override
             public void run() {
                 try {
-                    final String imageData = getImageData(path);
+                    final java.io.File image = loadImageFile(path);
                     ML4K ml4k = new ML4K(key);
-                    Classification classification = ml4k.classifyImage(imageData);
+                    Classification classification = ml4k.classifyImage(image);
                     GotClassification(path, classification.getClassification(), classification.getConfidence());
                 } catch (ML4KException e) {
                     GotError(path, e.getMessage());
@@ -149,11 +149,26 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
 
     }
 
-    @SimpleFunction(description = "Adds training data to the model")
-    public void AddTrainingData(String label, String data) {
-      // TODO: Implement this, must detect type of data (list, string, image) - might have to either overload or rename methods
-      // Post to /api/scratch/:scratchkey/train
-      // Payload: {"data": "...", "label": "..."}
+    // @SimpleFunction(description = "Adds training data to the model")
+    // public void AddTrainingData(String label, String data) {
+    //   // TODO: Implement this, must detect type of data (list, string, image) - might have to either overload or rename methods
+    //   // Post to /api/scratch/:scratchkey/train
+    //   // Payload: {"data": "...", "label": "..."}
+    // }
+
+    @SimpleFunction(description = "Adds an image training data to the model")
+    public void AddImageTrainingData(String label, String path) {
+        // TODO: Implement this
+    }
+
+    @SimpleFunction(description = "Adds a text training data to the model")
+    public void AddTextTrainingData(String label, String text) {
+        // TODO: Implement this
+    }
+
+    @SimpleFunction(description = "Adds numbers training data to the model")
+    public void AddNumbersTrainingData(String label, YailList numbers){
+        // TODO: Implement this
     }
 
     @SimpleFunction(description = "Gets the status of the model")
@@ -233,22 +248,13 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
      * @param path The path to the image.
      * @return The data of the image as a base 64 string.
      */
-    private String getImageData(String path) {
+    private java.io.File loadImageFile(String path) {
         try {
-            java.io.File file = MediaUtil.copyMediaToTempFile(form, path);
-
-
-            byte[] byteArray = readAllBytes(new FileInputStream(file));
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-              return Base64.getEncoder().encodeToString(byteArray);
-            } else {
-              return Base64Encoder.encode(byteArray);
-            }
+            return MediaUtil.copyMediaToTempFile(form, path);
         } catch (IOException e) {
           GotError(path, "File not found");
         }
-        return "";
+        return null;
     }
 
     /**

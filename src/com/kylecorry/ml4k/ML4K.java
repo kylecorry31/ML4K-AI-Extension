@@ -1,9 +1,10 @@
 package com.kylecorry.ml4k;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
@@ -50,9 +51,9 @@ class ML4K {
      * @return the classification of the image
      * @throws ML4KException when an error occurs
      */
-    public Classification classifyImage(String base64Image) throws ML4KException {
+    public Classification classifyImage(File image) throws ML4KException {
         try {
-            String dataStr = "{\"data\": " + "\"" + base64Image + "\"}";
+            String dataStr = "{\"data\": " + "\"" + ImageEncoder.encode(image) + "\"}";
             URL url = new URL(getBaseURL() + CLASSIFY_ENDPOINT);
             HttpUtils.Response res = HttpUtils.postJSON(url, dataStr);
 
@@ -64,6 +65,8 @@ class ML4K {
             }
         } catch (MalformedURLException e) {
             throw new ML4KException("Could not generate URL");
+        } catch (FileNotFoundException e) {
+            throw new ML4KException("Could not load image file");
         } catch (IOException e) {
             throw new ML4KException("No Internet connection."); // TODO: standardize error messages
         }
