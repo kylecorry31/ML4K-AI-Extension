@@ -44,6 +44,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
     private static final String CLASSIFY_ENDPOINT = "/classify";
     private static final String MODELS_ENDPOINT = "/model";
     private static final String TRAIN_ENDPOINT = "/train";
+    private static final String STATUS_ENDPOINT = "/status";
     private static final String DATA_KEY = "data";
 
     private final Activity activity;
@@ -270,8 +271,42 @@ public final class ML4K extends AndroidNonvisibleComponent {
 
     @SimpleFunction(description = "Train new machine learning model")
     public void TrainNewModel() {
-       // TODO: Implement this
-       // POST request to /api/scratch/:scratchkey/models 
+       runInBackground(new Runnable() {
+        @Override
+        public void run() {
+            final String TRAIN_KEY = "train";
+            try {
+                // check we have something that looks like a usable API key
+                checkApiKey();
+
+                // Get the data
+                String urlStr = getURL() + MODELS_ENDPOINT;
+
+                // Setup the request
+                URL url = new URL(urlStr);
+                HttpResponse res = postJSON(url, "");
+                
+                if (res.isOK()) {
+                    // Do nothing
+                } else {
+                    APIErrorResponse error = getErrorMessage(res.getResponseMessage(), res.getBody());
+                    GotError(TRAIN_KEY, error.getError());
+                }
+
+            } catch (ML4KException e) {
+                GotError(TRAIN_KEY, e.getMessage());
+            } catch (UnsupportedEncodingException e) {
+                GotError(TRAIN_KEY, "Could not encode text");
+            } catch (ProtocolException e) {
+                e.printStackTrace();
+            } catch (MalformedURLException e) {
+                GotError(TRAIN_KEY, "Could not generate URL");
+            } catch (IOException e) {
+                GotError(TRAIN_KEY, "No Internet connection.");
+            }
+        }
+    });
+
     }
 
     @SimpleFunction(description = "Adds training data to the model")
@@ -292,7 +327,7 @@ public final class ML4K extends AndroidNonvisibleComponent {
                     checkApiKey();
 
                     // Get the data
-                    String urlStr = getURL() + MODELS_ENDPOINT;
+                    String urlStr = getURL() + STATUS_ENDPOINT;
 
                     // Setup the request
                     URL url = new URL(urlStr);
@@ -318,8 +353,6 @@ public final class ML4K extends AndroidNonvisibleComponent {
                 } catch (IOException e) {
                     GotError(STATUS_KEY, "No Internet connection.");
                 }
-
-
             }
         });
     }
