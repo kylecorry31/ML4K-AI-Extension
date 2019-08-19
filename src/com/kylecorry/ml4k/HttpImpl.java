@@ -25,17 +25,22 @@ public class HttpImpl implements HttpStrategy {
     @Override
     public APIResponse postJSON(URL url, String data) throws IOException {
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setFixedLengthStreamingMode(data.length());
+        boolean hasBody = data != null && data.length() != 0;
+        if (hasBody) {
+            conn.setFixedLengthStreamingMode(data.length());
+        }
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestProperty("User-Agent", ML4K_USER_AGENT);
 
         // Write the post data
-        conn.setDoOutput(true);
-        DataOutputStream os = new DataOutputStream(conn.getOutputStream());
-        os.writeBytes(data);
-        os.flush();
-        os.close();
+        if (hasBody) {
+            conn.setDoOutput(true);
+            DataOutputStream os = new DataOutputStream(conn.getOutputStream());
+            os.writeBytes(data);
+            os.flush();
+            os.close();
+        }
 
         // Get response
         APIResponse res = APIResponse.fromConnection(conn);

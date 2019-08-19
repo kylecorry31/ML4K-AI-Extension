@@ -58,6 +58,9 @@ public class APIResponse {
      * @return The data from the input stream as a String.
      */
     private static String read(InputStream is) {
+        if (is == null){
+            return "";
+        }
         Scanner scanner = new Scanner(is);
 
         StringBuilder sb = new StringBuilder();

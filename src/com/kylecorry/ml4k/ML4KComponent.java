@@ -71,7 +71,8 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                     ML4K ml4k = new ML4K(key);
                     Classification classification = ml4k.classify(image);
                     GotClassification(path, classification.getClassification(), classification.getConfidence());
-                } catch (ML4KException e) {
+                    image.delete();
+                } catch (Exception e) {
                     GotError(path, e.getMessage());
                 }
             }
@@ -87,7 +88,7 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                     ML4K ml4k = new ML4K(key);
                     Classification classification = ml4k.classify(data);
                     GotClassification(data, classification.getClassification(), classification.getConfidence());
-                } catch (ML4KException e) {
+                } catch (Exception e) {
                     GotError(data, e.getMessage());
                 }
             }
@@ -103,7 +104,7 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                 try {
                     ML4K ml4k = new ML4K(key);
                     Classification classification = ml4k.classify(convertYailListToDouble(numbers));
-                } catch (ML4KException e) {
+                } catch (Exception e) {
                     GotError(data, e.getMessage());
                 }
             }
@@ -118,7 +119,7 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                 try {
                     ML4K ml4k = new ML4K(key);
                     ml4k.train();
-                } catch (ML4KException e) {
+                } catch (Exception e) {
                     GotError("train", e.getMessage());
                 }
             }
@@ -137,7 +138,7 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                     }
                     ML4K ml4k = new ML4K(key);
                     ml4k.addTrainingData(label, image);
-                } catch (ML4KException e) {
+                } catch (Exception e) {
                     GotError("train", e.getMessage());
                 }
             }
@@ -152,7 +153,7 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                 try {
                     ML4K ml4k = new ML4K(key);
                     ml4k.addTrainingData(label, text);
-                } catch (ML4KException e) {
+                } catch (Exception e) {
                     GotError("train", e.getMessage());
                 }
             }
@@ -167,7 +168,7 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                 try {
                     ML4K ml4k = new ML4K(key);
                     ml4k.addTrainingData(label, convertYailListToDouble(numbers));
-                } catch (ML4KException e) {
+                } catch (Exception e) {
                     GotError("train", e.getMessage());
                 }
             }
@@ -183,7 +184,7 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                     ML4K ml4k = new ML4K(key);
                     ModelStatus status = ml4k.getModelStatus();
                     GotStatus(status.getStatusCode(), status.getMessage());
-                } catch (ML4KException e) {
+                } catch (Exception e) {
                     GotError("status", e.getMessage());
                 }
             }
@@ -264,8 +265,8 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
     private java.io.File loadImageFile(String path) {
         try {
             return MediaUtil.copyMediaToTempFile(form, path);
-        } catch (IOException e) {
-          GotError(path, "File not found");
+        } catch (Exception e) {
+            GotError(path, e.getMessage());
         }
         return null;
     }

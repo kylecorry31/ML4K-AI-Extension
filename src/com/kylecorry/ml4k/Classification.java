@@ -40,4 +40,13 @@ class Classification {
     public double getConfidence() {
         return confidence;
     }
+
+
+    @Override
+    public String toString() {
+        return "Classification{" +
+                "classification='" + classification + '\'' +
+                ", confidence=" + confidence +
+                '}';
+    }
 }

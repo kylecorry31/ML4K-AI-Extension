@@ -17,7 +17,7 @@ public class ML4K {
 
     private static final String BASE_URL = "https://machinelearningforkids.co.uk/api/scratch/%s";
     private static final String CLASSIFY_ENDPOINT = "/classify";
-    private static final String MODELS_ENDPOINT = "/model";
+    private static final String MODELS_ENDPOINT = "/models";
     private static final String TRAIN_ENDPOINT = "/train";
     private static final String STATUS_ENDPOINT = "/status";
 
@@ -219,7 +219,7 @@ public class ML4K {
     public void train() throws ML4KException {
         try {
             URL url = new URL(getBaseURL() + MODELS_ENDPOINT);
-            APIResponse res = http.postJSON(url, "");
+            APIResponse res = http.postJSON(url, "{}");
             
             if (res.isOK()) {
                 // Do nothing
