@@ -104,6 +104,7 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                 try {
                     ML4K ml4k = new ML4K(key);
                     Classification classification = ml4k.classify(convertYailListToDouble(numbers));
+                    GotClassification(data, classification.getClassification(), classification.getConfidence());
                 } catch (Exception e) {
                     GotError(data, e.getMessage());
                 }

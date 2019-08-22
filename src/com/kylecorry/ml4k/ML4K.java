@@ -145,23 +145,7 @@ public class ML4K {
      * @throws ML4KException if there is an error
      */
     public void addTrainingData(String label, String text) throws ML4KException {
-        try {
-            URL url = new URL(getBaseURL() + TRAIN_ENDPOINT);
-            APIResponse res = http.postJSON(url, "{ \"data\": \"" + text + "\", \"label\": \"" + label + "\" }");
-            
-            if (res.isOK()) {
-                // Do nothing
-            } else {
-                APIErrorResponse response = APIErrorResponse.fromJson(res.getBody());
-                throw new ML4KException(response == null ? "Bad response from server: " + res.getResponseCode() : response.getError());
-            }
-        } catch (UnsupportedEncodingException e) {
-            throw new ML4KException("Could not encode numbers");
-        } catch (MalformedURLException e) {
-            throw new ML4KException("Could not generate URL");
-        } catch (IOException e) {
-            throw new ML4KException("No Internet connection.");
-        }
+        addTrainingDataHelper(label, "\"" + text + "\"");
     }
 
     /**
@@ -172,7 +156,7 @@ public class ML4K {
      */
     public void addTrainingData(String label, File image) throws ML4KException {
         try {
-            addTrainingData(label, ImageEncoder.encode(image));
+            addTrainingDataHelper(label, "\"" + ImageEncoder.encode(image) + "\"");
         } catch (IOException e) {
             throw new ML4KException("Could not encode image");
         }
@@ -185,9 +169,8 @@ public class ML4K {
      * @throws ML4KException if there is an error
      */
     public void addTrainingData(String label, List<Double> numbers) throws ML4KException {
-        addTrainingData(label, numbers.toString()); // TODO: this might not be right
+        addTrainingDataHelper(label, numbers.toString());
     }
-
 
     /**
      * @return the model's status
@@ -265,6 +248,26 @@ public class ML4K {
         }
 
         return sb.toString();
+    }
+
+    private void addTrainingDataHelper(String label, String data) throws ML4KException {
+        try {
+            URL url = new URL(getBaseURL() + TRAIN_ENDPOINT);
+            APIResponse res = http.postJSON(url, "{ \"data\": " + data + ", \"label\": \"" + label + "\" }");
+            
+            if (res.isOK()) {
+                // Do nothing
+            } else {
+                APIErrorResponse response = APIErrorResponse.fromJson(res.getBody());
+                throw new ML4KException(response == null ? "Bad response from server: " + res.getResponseCode() : response.getError());
+            }
+        } catch (UnsupportedEncodingException e) {
+            throw new ML4KException("Could not encode data");
+        } catch (MalformedURLException e) {
+            throw new ML4KException("Could not generate URL");
+        } catch (IOException e) {
+            throw new ML4KException("No Internet connection.");
+        }
     }
 
 
