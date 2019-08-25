@@ -265,7 +265,8 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
      */
     private java.io.File loadImageFile(String path) {
         try {
-            return MediaUtil.copyMediaToTempFile(form, path);
+            java.io.File image = MediaUtil.copyMediaToTempFile(form, path);
+            return ImageResizer.resize(image, 224, 224);
         } catch (Exception e) {
             GotError(path, e.getMessage());
         }
