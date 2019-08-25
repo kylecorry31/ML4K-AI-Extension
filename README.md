@@ -73,6 +73,10 @@ Download the latest extension file (.aix) from the [releases](https://github.com
     * statusCode 2 - "Ready" - The model is trained and ready to use.  
     * statusCode 1 - "Training in progress" - The model is still training and cannot be used.  
     * statusCode 0 - Something went wrong (or there isn't a model) - the 'message' variable will contain information on the issue.  
+  
+9. Use the "TrainNewModel" block to train your Text or Numbers project with App Inventor.
+    ![](examples/TrainNewModel.jpg) 
+    * Note: This block cannot be used for training Image projects. Only available for Text and Numbers. 
 
 ### Handling Errors
 Upon an error, the "GotError" event block will be called with the error that occurred. Please use this event block fro debugging.  
