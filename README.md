@@ -22,11 +22,22 @@ See example .aia projects in the examples directory of this repo (Created by [Jo
 ## Installation
 Download the latest extension file (.aix) from the [releases](https://github.com/kylecorry31/ML4K-AI-Extension/releases) page and follow section "2. How to use extensions components" of [this website](http://ai2.appinventor.mit.edu/reference/other/extensions.html) to add the extension to your App Inventor project.
 
-## Guide
+## Guide  
 
-**If you received this extension from the ML4K website, your API key will be set for you and you don't need the block to set it - skip to step 3.**
+---  
+**If you received this extension from the ML4K website, your API key will be set for you and you don't need the block to set it - skip to step 1 and 2.**  
+  
+---    
 
-1. After installing the extension, you need to get an API key, which can be obtained from [Machine Learning for Kids](https://machinelearningforkids.co.uk/).
+1. After installing the extension, you need to get an API key, which can be obtained from [Machine Learning for Kids](https://machinelearningforkids.co.uk/). This API Key is not the IBM Watson API keys used to create your Machine Learning for Kids account. This API key is specific to your project. It can be found on the App Inventor project page in the unique URL for your project.
+  
+[](examples/AppInProject.jpg)  
+  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Or, the key can be found on the Python project page.  
+  
+[](examples/PyProject.jpg)  
+  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**__Do not use the keys displayed in the images above. Use the keys from your project pages.__**
 
 2. Copy and paste the API Key into the ML4K component’s “Key” property on the Designer screen or use the "set Key" block on the Blocks screen. Note: API Key must be set before you can use any of the ML4K extension blocks for classification. If you choose to set the key using the “set Key” block, be sure to set the key in the Screen.Initialize event or any time before you use a classification method (purple block).
 
