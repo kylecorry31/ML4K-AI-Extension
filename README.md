@@ -29,7 +29,7 @@ Download the latest extension file (.aix) from the [releases](https://github.com
   
 ---    
 
-1. After installing the extension, you need to get an API key, which can be obtained from [Machine Learning for Kids](https://machinelearningforkids.co.uk/). This API Key is not the IBM Watson API keys used to create your Machine Learning for Kids account. This API key is specific to your project. It can be found on the App Inventor project page in the unique URL for your project.
+1. After installing the extension, you need to get an API key, which can be obtained from [Machine Learning for Kids](https://machinelearningforkids.co.uk/). This API Key is not the IBM Watson API keys used to create your Machine Learning for Kids account. This key is created by Machine Learning for Kids and is specific to your project. It can be found on the App Inventor project page in the unique URL for your project.
   
 ![](examples/AppInProject.jpg)  
   
