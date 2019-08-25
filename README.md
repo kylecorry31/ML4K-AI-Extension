@@ -31,29 +31,52 @@ Download the latest extension file (.aix) from the [releases](https://github.com
 
 1. After installing the extension, you need to get an API key, which can be obtained from [Machine Learning for Kids](https://machinelearningforkids.co.uk/). This API Key is not the IBM Watson API keys used to create your Machine Learning for Kids account. This API key is specific to your project. It can be found on the App Inventor project page in the unique URL for your project.
   
-[](examples/AppInProject.jpg)  
+![](examples/AppInProject.jpg)  
   
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Or, the key can be found on the Python project page.  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Or, the key can be found on the Python project page.  
   
-[](examples/PyProject.jpg)  
+![](examples/PyProject.jpg)  
   
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**__Do not use the keys displayed in the images above. Use the keys from your project pages.__**
 
 2. Copy and paste the API Key into the ML4K component’s “Key” property on the Designer screen or use the "set Key" block on the Blocks screen. Note: API Key must be set before you can use any of the ML4K extension blocks for classification. If you choose to set the key using the “set Key” block, be sure to set the key in the Screen.Initialize event or any time before you use a classification method (purple block).
 
-![Set Key](examples/set_key.png)
+![Set Key](examples/set_key.png)  
 
-3. Classify the text, image, or numbers.
-  * If classifying text, use the "ClassifyText" block with the text to classify.
-  * If classifying images, use the "ClassifyImage" block with the image path to classify.
-  * If classifying numbers, use the "ClassifyNumbers" block with a list of numbers to classify.
+3. Classify the text, image, or numbers:   
+  a. If classifying text, use the "ClassifyText" block with the text to classify.  
+    ![](examples/ClassifyText.jpg)  
+  b. If classifying images, use the "ClassifyImage" block with the image path to classify.  
+    ![](examples/ClassifyImage.jpg)  
+  c. If classifying numbers, use the "ClassifyNumbers" block with a list of numbers to classify.  
+    ![](examples/ClassifyNumbers.jpg)  
 
-4. Use the "GotClassification" block to retrieve the classification once it is completed.
+4. Use the "GotClassification" event block to retrieve the classification once it is completed.  
+    ![](examples/GotClassification.jpg)
 
-5. Use the "GotError" block to retrieve any errors which occur during classification.
+5. Use the "GotError" event block to retrieve any errors which occur during classification.  
+    ![](examples/GotError.jpg)
+
+6. Add data to your machine learning project with code:  
+  a. To add data to a text project use the "AddTextTrainingData" block, identifying the text data to add and label to add it to.  
+    ![](examples/AddTextTrainingData.jpg)  
+  b. To add data to an image project use the "AddImageTrainingData" block, identifying the image file to add and label to add it to.  
+    ![](examples/AddImageTrainingData.jpg)  
+  c. To add data to a numbers project use the "AddNumbersTrainingData" block, identifying the list of numbers and label to add it to.  
+    ![](examples/AddNumbersTrainingData.jpg)  
+  
+7. Use the "GetModelStatus" block to see if your model is ready to use or still in the process of training.  
+    ![](examples/GetModelStatus.jpg)  
+  
+8. Use the "GotStatus" event block to retrieve the status of the model.  
+    ![](examples/GotStatus.jpg)  
+    * statusCode 2 - "Ready" - The model is trained and ready to use.  
+    * statusCode 1 - "Training in progress" - The model is still training and cannot be used.  
+    * statusCode 0 - Something went wrong (or there isn't a model) - the 'message' variable will contain information on the issue.  
 
 ### Handling Errors
-Upon an error, the "GotError" block will be called with the error that occurred.
+Upon an error, the "GotError" event block will be called with the error that occurred. Please use this event block fro debugging.  
+    ![](examples/GotError.jpg)  
 
 ## Building with preset API key
 To build the extension, open a terminal and navigate to the release folder. Run the build_aix.py script, passing in the API key.
