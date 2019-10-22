@@ -9,6 +9,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.regex.Pattern;
+import android.text.TextUtils;
 
 /**
  * The ML4K API
@@ -45,7 +46,7 @@ public class ML4K {
      * @throws ML4KException if the API key is invalid
      */
     public void setAPIKey(String apiKey) throws ML4KException {
-        if (apiKey == null || apiKey.isEmpty()) {
+        if (TextUtils.isEmpty(apiKey)) {
             throw new ML4KException("API key not set");
         }
         if (!apiKeyPattern.matcher(apiKey).matches()) {
