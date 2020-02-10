@@ -125,6 +125,9 @@ To build the extension from sources, you can use the build.bat.
 
 This will create a directory called \_build/dist which will contain the .aix file (without an API key).
 
+## FAQ
+**The extension crashes while using an emulator**: See [this issue](https://github.com/kylecorry31/ML4K-AI-Extension/issues/35)
+
 ## License
 This project is licensed under the [MIT License](LICENSE).
 
