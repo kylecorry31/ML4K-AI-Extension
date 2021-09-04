@@ -16,10 +16,19 @@ import com.google.appinventor.components.annotations.UsesPermissions;
 import com.google.appinventor.components.annotations.UsesLibraries;
 import com.google.appinventor.components.annotations.UsesAssets;
 import com.google.appinventor.components.runtime.util.MediaUtil;
+import com.google.appinventor.components.runtime.WebViewer;
 
 import android.app.Activity;
 import android.os.Build;
 import android.net.Uri;
+import android.util.Log;
+import android.webkit.JavascriptInterface;
+import android.webkit.PermissionRequest;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import java.io.*;
 import java.net.*;
@@ -27,7 +36,9 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
@@ -36,18 +47,28 @@ import java.util.regex.Pattern;
         category = ComponentCategory.EXTENSION,
         nonVisible = true,
         iconName = "aiwebres/ml4k.png")
-@UsesAssets(fileNames = "api.txt")
+@UsesAssets(fileNames = "api.txt, ml4k.html, ml4k.js, tf.min.js, model.json, group1-shard1of1, group10-shard1of1, group11-shard1of1, group12-shard1of1, group13-shard1of1, group14-shard1of1, group15-shard1of1, group16-shard1of1, group17-shard1of1, group18-shard1of1, group19-shard1of1, group2-shard1of1, group20-shard1of1, group21-shard1of1, group22-shard1of1, group23-shard1of1, group24-shard1of1, group25-shard1of1, group26-shard1of1, group27-shard1of1, group28-shard1of1, group29-shard1of1, group3-shard1of1, group30-shard1of1, group31-shard1of1, group32-shard1of1, group33-shard1of1, group34-shard1of1, group35-shard1of1, group36-shard1of1, group37-shard1of1, group38-shard1of1, group39-shard1of1, group4-shard1of1, group40-shard1of1, group41-shard1of1, group42-shard1of1, group43-shard1of1, group44-shard1of1, group45-shard1of1, group46-shard1of1, group47-shard1of1, group48-shard1of1, group49-shard1of1, group5-shard1of1, group50-shard1of1, group51-shard1of1, group52-shard1of1, group53-shard1of1, group54-shard1of1, group55-shard1of1, group6-shard1of1, group7-shard1of1, group8-shard1of1, group9-shard1of1")
 @SimpleObject(external = true)
 @UsesPermissions(permissionNames = "android.permission.INTERNET")
 public final class ML4KComponent extends AndroidNonvisibleComponent {
-    
+
+    private static final String LOGPREFIX = "ML4KComponent";
+
     private final Activity activity;
 
     private String key = getKeyFromFile();
 
+    private WebView browser = null;
+    private ML4KWebPage webPageObj = null;
+
+    private final String ML4KURL = "https://machinelearningforkids.co.uk/appinventor-assets/";
+
     public ML4KComponent(ComponentContainer container) {
         super(container.$form());
         activity = container.$context();
+
+        browser = prepareBrowser();
+        loadWebPage();
     }
 
     @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_STRING)
@@ -298,5 +319,96 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
      */
     private void runInBackground(Runnable runnable) {
         AsynchUtil.runAsynchronously(runnable);
+    }
+
+
+
+
+
+    @SimpleFunction(description = "Train new machine learning model")
+    public void TrainNewTfjsModel() {
+        if (webPageObj.isReady()) {
+            webPageObj.trainNewModel();
+        }
+    }
+
+    @SimpleProperty
+    public boolean IsTfjsModelReady() {
+        return webPageObj.isModelReady();
+    }
+
+
+
+
+    private WebResourceResponse prepareAssetForBrowser(String filename) throws IOException {
+        Log.d(LOGPREFIX, "loading from assets " + filename);
+        InputStream fileStream = form.openAssetForExtension(ML4KComponent.this, filename);
+        String mime = "text/plain";
+        if (filename.endsWith(".json")) {
+            mime = "application/json";
+        }
+        else if (filename.endsWith(".js")) {
+            mime = "text/javascript";
+        }
+        else if (filename.endsWith(".html")) {
+            mime = "text/html";
+        }
+        else if (filename.endsWith("-shard1of1")) {
+            mime = "application/octet-stream";
+        }
+        else {
+            Log.d(LOGPREFIX, "not available in assets " + filename);
+            throw new IOException("File not included in assets");
+        }
+
+        Map<String, String> responseHeaders = new HashMap<>();
+        responseHeaders.put("Access-Control-Allow-Origin", "*");
+        return new WebResourceResponse(mime, "UTF-8", 200, "OK", responseHeaders, fileStream);
+    }
+
+
+    private WebView prepareBrowser() {
+        Log.d(LOGPREFIX, "Creating browser to use for TensorFlow.js");
+        WebView webView = new WebView(activity);
+
+        WebSettings webViewSettings = webView.getSettings();
+        webViewSettings.setJavaScriptEnabled(true);
+        webViewSettings.setMediaPlaybackRequiresUserGesture(false);
+
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView v, String url) {
+                Log.d(LOGPREFIX, "shouldInterceptRequest " + url);
+
+                if (url.startsWith(ML4KURL)) {
+                    try {
+                        String localUrl = url.substring(ML4KURL.length());
+                        return prepareAssetForBrowser(localUrl);
+                    }
+                    catch (Exception exc) {
+                        exc.printStackTrace();
+                    }
+                }
+
+                return super.shouldInterceptRequest(v, url);
+            }
+        });
+
+        return webView;
+    }
+
+
+    private void loadWebPage() {
+        try {
+            Log.d(LOGPREFIX, "loading tfjs web page");
+            browser.loadUrl(ML4KURL + "ml4k.html");
+
+            Log.d(LOGPREFIX, "binding to Java object");
+            webPageObj = new ML4KWebPage(browser);
+            browser.addJavascriptInterface(webPageObj, "ML4KJavaInterface");
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
