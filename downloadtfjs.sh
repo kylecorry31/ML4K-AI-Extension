@@ -9,4 +9,6 @@ if [ ! -f "../src/com/kylecorry/ml4k/assets/model.json" ]; then
     done
     npm install @tensorflow/tfjs
     cp node_modules/@tensorflow/tfjs/dist/tf.min.js ../src/com/kylecorry/ml4k/assets/.
+    npm install @ricokahler/pool
+    cp node_modules/@ricokahler/pool/dist/index.js ../src/com/kylecorry/ml4k/assets/promisepool.js
 fi
