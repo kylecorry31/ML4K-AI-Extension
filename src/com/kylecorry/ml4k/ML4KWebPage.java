@@ -13,16 +13,19 @@ public class ML4KWebPage {
     private boolean pageReady = false;
     private boolean modelReady = false;
 
+    private String currentScratchKey;
+
     private String modelStatus = "Not trained";
     private int modelProgress = 0;
     private Date modelUpdated = new Date();
 
     private WebView browser;
 
-    ML4KWebPage(WebView browserView) {
+    ML4KWebPage(WebView browserView, String scratchkey) {
         Log.d(LOGPREFIX, "Creating JS/Java interface");
         browser = browserView;
         pageReady = false;
+        currentScratchKey = scratchkey;
     }
 
     @JavascriptInterface
@@ -44,6 +47,12 @@ public class ML4KWebPage {
 
 
     @JavascriptInterface
+    public String getInitialScratchKey() {
+        return currentScratchKey;
+    }
+
+
+    @JavascriptInterface
     public void setModelStatus(String status, int progress) {
         modelStatus = status;
         modelProgress = progress;
@@ -58,9 +67,8 @@ public class ML4KWebPage {
     }
 
 
-    public void trainNewModel() {
+    public void trainNewModel(String scratchkey) {
         Log.d(LOGPREFIX, "Training new TensorflowJS model");
-        String scratchkey = "not-ready-yet";
         runWebpageFunction("ml4kTrainNewModel('" + scratchkey + "')");
     }
 

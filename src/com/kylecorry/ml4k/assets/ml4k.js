@@ -1,16 +1,16 @@
-var _ml4kBaseModel;
-var _ml4kTransferModel;
-
-var _ml4kUsingRestoredModel = false;
-
-var _ml4kNumClasses = 2;
+// ---------------------------------------------------------------------
 
 var _ML4K_IMG_WIDTH = 224;
 var _ML4K_IMG_HEIGHT = 224;
 
 var _ML4K_MODEL_TYPE = 'images';
 
+// ---------------------------------------------------------------------
 
+var _ml4kBaseModel;
+var _ml4kTransferModel;
+
+var _ml4kUsingRestoredModel = false;
 
 // ---------------------------------------------------------------------
 
@@ -53,6 +53,7 @@ function _ml4kLoadModel(modeltype, scratchkey) {
     var savelocation = _ml4kGetModelDbLocation(modeltype, scratchkey);
     return tf.loadLayersModel(savelocation)
         .then(function (resp) {
+            console.log('loaded model');
             ML4KJavaInterface.setModelStatus('Available', 100);
             _ml4kUsingRestoredModel = true;
             return resp;
@@ -134,13 +135,13 @@ function _ml4kPrepareTransferLearningModel(modifiedMobilenet, numClasses) {
 function _ml4kTrainModel(baseModel, transferModel, scratchkey, trainingdata) {
     ML4KJavaInterface.setModelStatus('Training', 0);
 
-    var modelClasses = [ 'cat', 'dog' ];
+    var modelClasses = trainingdata.labels;
 
     var xs;
     var ys;
 
-    for (var i=0; i < trainingdata.length; i++) {
-        var trainingdataitem = trainingdata[i];
+    for (var i=0; i < trainingdata.imagedata.length; i++) {
+        var trainingdataitem = trainingdata.imagedata[i];
         // { id : imageid, label : imagelabel, tensor : tensorData }
 
         var labelIdx = modelClasses.indexOf(trainingdataitem.label);
@@ -166,7 +167,7 @@ function _ml4kTrainModel(baseModel, transferModel, scratchkey, trainingdata) {
     }
 
     var epochs = 10;
-    if (trainingdata.length > 55) {
+    if (trainingdata.imagedata.length > 55) {
         epochs = 15;
     }
 
@@ -228,10 +229,6 @@ function _ml4kCreateTensorForImageData(imageid, imagedata, imagelabel) {
     });
 }
 
-// ---------------------------------------------------------------------
-
-
-
 function _ml4kGetImageData(imageid, imageurl, imagelabel) {
     console.log('getImageData : ' + imageid + ' : ' + imageurl);
     return _ml4kFetchData(imageurl)
@@ -242,6 +239,7 @@ function _ml4kGetImageData(imageid, imageurl, imagelabel) {
 
 function _ml4kGetTrainingImages(scratchkey) {
     console.log('getting training images');
+    var labels = new Set();
     return _ml4kFetchJson('https://machinelearningforkids.co.uk/api/scratch/' + scratchkey + '/train')
         .then(function (imagesList) {
             // return Promise.all(imagesList.map(function (imageInfo) {
@@ -251,9 +249,13 @@ function _ml4kGetTrainingImages(scratchkey) {
                 collection: imagesList,
                 maxConcurrency: 10,
                 task: function (imageInfo) {
+                    labels.add(imageInfo.label);
                     return _ml4kGetImageData(imageInfo.id, imageInfo.imageurl, imageInfo.label);
                 }
             });
+        })
+        .then(function (trainingimages) {
+            return { imagedata : trainingimages, labels : Array.from(labels) };
         });
 }
 
@@ -262,13 +264,12 @@ function _ml4kGetTrainingImages(scratchkey) {
 
 
 function ml4kTrainNewModel(scratchkey) {
-    if (_ml4kUsingRestoredModel) {
-        _ml4kTransferModel = _ml4kPrepareTransferLearningModel(_ml4kBaseModel, _ml4kNumClasses);
-    }
-
     return _ml4kGetTrainingImages(scratchkey)
-        .then(function (trainingImageData) {
-            return _ml4kTrainModel(_ml4kBaseModel, _ml4kTransferModel, scratchkey, trainingImageData);
+        .then(function (trainingdata) {
+            if (_ml4kUsingRestoredModel || !_ml4kTransferModel) {
+                _ml4kTransferModel = _ml4kPrepareTransferLearningModel(_ml4kBaseModel, trainingdata.labels.length);
+            }
+            return _ml4kTrainModel(_ml4kBaseModel, _ml4kTransferModel, scratchkey, trainingdata);
         })
         .then(function () {
             ML4KJavaInterface.setModelReady(true);
@@ -300,9 +301,6 @@ function ml4kOnStart(scratchkey) {
         .then(function (loadedmodel) {
             if (loadedmodel) {
                 _ml4kTransferModel = loadedmodel;
-            }
-            else {
-                _ml4kTransferModel = _ml4kPrepareTransferLearningModel(_ml4kBaseModel, _ml4kNumClasses);
             }
 
             ML4KJavaInterface.setReady(true);

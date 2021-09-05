@@ -326,7 +326,7 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
     @SimpleFunction(description = "Train new machine learning model")
     public void TrainNewTfjsModel() {
         if (webPageObj.isReady()) {
-            webPageObj.trainNewModel();
+            webPageObj.trainNewModel(key);
         }
     }
 
@@ -398,12 +398,12 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
 
     private void loadWebPage() {
         try {
+            Log.d(LOGPREFIX, "binding to Java object");
+            webPageObj = new ML4KWebPage(browser, key.trim());
+            browser.addJavascriptInterface(webPageObj, "ML4KJavaInterface");
+
             Log.d(LOGPREFIX, "loading tfjs web page");
             browser.loadUrl(ML4KURL + "ml4k.html");
-
-            Log.d(LOGPREFIX, "binding to Java object");
-            webPageObj = new ML4KWebPage(browser);
-            browser.addJavascriptInterface(webPageObj, "ML4KJavaInterface");
         }
         catch (Exception e) {
             e.printStackTrace();
