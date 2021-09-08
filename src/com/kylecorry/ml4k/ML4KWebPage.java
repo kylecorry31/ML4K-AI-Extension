@@ -21,11 +21,14 @@ public class ML4KWebPage {
 
     private WebView browser;
 
-    ML4KWebPage(WebView browserView, String scratchkey) {
+    private ML4KComponent callback;
+
+    ML4KWebPage(WebView browserView, String scratchkey, ML4KComponent parent) {
         Log.d(LOGPREFIX, "Creating JS/Java interface");
         browser = browserView;
         pageReady = false;
         currentScratchKey = scratchkey;
+        callback = parent;
     }
 
     @JavascriptInterface
@@ -66,10 +69,20 @@ public class ML4KWebPage {
         return modelStatus;
     }
 
+    @JavascriptInterface
+    public void classifyResponse(String label, double confidence){
+        Log.d(LOGPREFIX, "Received classify response");
+        callback.GotClassification(label, label, confidence);
+    }
 
     public void trainNewModel(String scratchkey) {
         Log.d(LOGPREFIX, "Training new TensorflowJS model");
         runWebpageFunction("ml4kTrainNewModel('" + scratchkey + "')");
+    }
+
+    public void submitClassificationRequest(String base64imagedata) {
+        Log.d(LOGPREFIX, "Classifying image");
+        runWebpageFunction("ml4kClassifyImage('" + base64imagedata + "')");
     }
 
     private void runWebpageFunction(String function) {

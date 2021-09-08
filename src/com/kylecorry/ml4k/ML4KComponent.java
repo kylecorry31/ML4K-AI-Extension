@@ -19,6 +19,8 @@ import com.google.appinventor.components.runtime.util.MediaUtil;
 import com.google.appinventor.components.runtime.WebViewer;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Build;
 import android.net.Uri;
 import android.util.Log;
@@ -321,12 +323,34 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
 
 
 
+    private void displayErrorMessage(String errormessage) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        builder
+            .setTitle("Machine Learning for Kids")
+            .setMessage(errormessage)
+            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    dialog.dismiss();
+                }
+            })
+            .create()
+            .show();
+    }
+
 
 
     @SimpleFunction(description = "Train new machine learning model")
     public void TrainNewTfjsModel() {
         if (webPageObj.isReady()) {
-            webPageObj.trainNewModel(key);
+            if (key == null || key.trim().isEmpty()) {
+                displayErrorMessage("API key required");
+            }
+            else {
+                webPageObj.trainNewModel(key);
+            }
+        }
+        else {
+            displayErrorMessage("Not ready yet. Please try again in a moment");
         }
     }
 
@@ -335,7 +359,39 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
         return webPageObj.getModelStatus() + " " + webPageObj.getModelProgress();
     }
 
+    @SimpleFunction(description = "Get the classification for the image.")
+    public void ClassifyImageTfjs(final String path) {
+        if (!webPageObj.getModelStatus().equals("Available")) {
+            displayErrorMessage("Please train a model first");
+            return;
+        }
 
+        runInBackground(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(LOGPREFIX, "classifying image....");
+                try {
+                    Log.d(LOGPREFIX, "getting and resizing image");
+                    final java.io.File image = loadImageFile(path);
+
+                    Log.d(LOGPREFIX, "encoding image");
+                    final String imagedata = ImageEncoder.encode(image);
+
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            webPageObj.submitClassificationRequest(imagedata);
+                        }
+                    });
+
+                    image.delete();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    GotError(path, e.getMessage());
+                }
+            }
+        });
+    }
 
 
     private WebResourceResponse prepareAssetForBrowser(String filename) throws IOException {
@@ -399,7 +455,7 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
     private void loadWebPage() {
         try {
             Log.d(LOGPREFIX, "binding to Java object");
-            webPageObj = new ML4KWebPage(browser, key.trim());
+            webPageObj = new ML4KWebPage(browser, key.trim(), this);
             browser.addJavascriptInterface(webPageObj, "ML4KJavaInterface");
 
             Log.d(LOGPREFIX, "loading tfjs web page");

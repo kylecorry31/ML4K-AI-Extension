@@ -10,6 +10,8 @@ var _ML4K_MODEL_TYPE = 'images';
 var _ml4kBaseModel;
 var _ml4kTransferModel;
 
+var _ml4kModelClasses;
+
 var _ml4kUsingRestoredModel = false;
 
 // ---------------------------------------------------------------------
@@ -54,6 +56,12 @@ function _ml4kLoadModel(modeltype, scratchkey) {
     return tf.loadLayersModel(savelocation)
         .then(function (resp) {
             console.log('loaded model');
+
+            if (window.localStorage) {
+                var modelMetadataStr = window.localStorage.getItem('ml4k-modelinfo-' + modeltype + '-' + scratchkey);
+                _ml4kModelClasses = JSON.parse(modelMetadataStr).classes;
+            }
+
             ML4KJavaInterface.setModelStatus('Available', 100);
             _ml4kUsingRestoredModel = true;
             return resp;
@@ -64,10 +72,16 @@ function _ml4kLoadModel(modeltype, scratchkey) {
         });
 }
 
-function _ml4kSaveModel(modeltype, scratchkey, transferModel) {
+function _ml4kSaveModel(modeltype, scratchkey, modelClasses, transferModel) {
     console.log('saving model');
     var savelocation = _ml4kGetModelDbLocation(modeltype, scratchkey);
     return transferModel.save(savelocation)
+        .then(function () {
+            if (window.localStorage) {
+                window.localStorage.setItem('ml4k-modelinfo-' + modeltype + '-' + scratchkey,
+                    JSON.stringify({ classes : modelClasses }));
+            }
+        })
         .catch(function (err) {
             console.log('failed to save model');
             console.log(err);
@@ -135,20 +149,19 @@ function _ml4kPrepareTransferLearningModel(modifiedMobilenet, numClasses) {
 function _ml4kTrainModel(baseModel, transferModel, scratchkey, trainingdata) {
     ML4KJavaInterface.setModelStatus('Training', 0);
 
-    var modelClasses = trainingdata.labels;
+    _ml4kModelClasses = trainingdata.labels;
 
     var xs;
     var ys;
 
     for (var i=0; i < trainingdata.imagedata.length; i++) {
         var trainingdataitem = trainingdata.imagedata[i];
-        // { id : imageid, label : imagelabel, tensor : tensorData }
 
-        var labelIdx = modelClasses.indexOf(trainingdataitem.label);
+        var labelIdx = _ml4kModelClasses.indexOf(trainingdataitem.label);
 
         var xval = baseModel.predict(trainingdataitem.tensor);
         var yval = tf.tidy(function () {
-            return tf.oneHot(tf.tensor1d([ labelIdx ]).toInt(), modelClasses.length);
+            return tf.oneHot(tf.tensor1d([ labelIdx ]).toInt(), _ml4kModelClasses.length);
         });
 
         if (i === 0) {
@@ -185,7 +198,7 @@ function _ml4kTrainModel(baseModel, transferModel, scratchkey, trainingdata) {
                 }
             },
             onTrainEnd : function () {
-                return _ml4kSaveModel(_ML4K_MODEL_TYPE, scratchkey, transferModel)
+                return _ml4kSaveModel(_ML4K_MODEL_TYPE, scratchkey, _ml4kModelClasses, transferModel)
                     .then(function () {
                         console.log('training complete');
                         ML4KJavaInterface.setModelStatus('Available', 100);
@@ -208,7 +221,7 @@ function _ml4kCreateTensorForImageData(imageid, imagedata, imagelabel) {
         hiddenImg.width = _ML4K_IMG_WIDTH;
         hiddenImg.height = _ML4K_IMG_HEIGHT;
         hiddenImg.onerror = function (err) {
-            console.log('[ml4kimages] Failed to load image', imageid);
+            console.log('Failed to load image', imageid);
             return reject(err);
         };
         hiddenImg.onload = function () {
@@ -229,6 +242,32 @@ function _ml4kCreateTensorForImageData(imageid, imagedata, imagelabel) {
     });
 }
 
+function _ml4kCreateTensorForTestImage(imagedata) {
+    return new Promise(function (resolve, reject) {
+        var hiddenImg = document.createElement('img');
+        hiddenImg.id = '_ml4k_test_' + Date.now();
+        hiddenImg.width = _ML4K_IMG_WIDTH;
+        hiddenImg.height = _ML4K_IMG_HEIGHT;
+        hiddenImg.onerror = function (err) {
+            console.log('Failed to load image');
+            console.log(imagedata);
+            return reject(err);
+        };
+        hiddenImg.onload = function () {
+            var tensorData = tf.tidy(function () {
+                return tf.browser.fromPixels(hiddenImg)
+                            .expandDims(0)
+                            .toFloat()
+                            .div(127)
+                            .sub(1);
+            });
+
+            resolve(tensorData);
+        };
+        hiddenImg.src = 'data:image/jpg;base64,' + imagedata;
+    });
+}
+
 function _ml4kGetImageData(imageid, imageurl, imagelabel) {
     console.log('getImageData : ' + imageid + ' : ' + imageurl);
     return _ml4kFetchData(imageurl)
@@ -242,9 +281,6 @@ function _ml4kGetTrainingImages(scratchkey) {
     var labels = new Set();
     return _ml4kFetchJson('https://machinelearningforkids.co.uk/api/scratch/' + scratchkey + '/train')
         .then(function (imagesList) {
-            // return Promise.all(imagesList.map(function (imageInfo) {
-            //     return _ml4kGetImageData(imageInfo.id, imageInfo.imageurl, imageInfo.label);
-            // }));
             return pool({
                 collection: imagesList,
                 maxConcurrency: 10,
@@ -261,7 +297,64 @@ function _ml4kGetTrainingImages(scratchkey) {
 
 // ---------------------------------------------------------------------
 
+function _ml4kSortByConfidence(a, b) {
+    if (a.confidence < b.confidence) {
+        return 1;
+    }
+    else if (a.confidence > b.confidence) {
+        return -1;
+    }
+    else {
+        return 0;
+    }
+}
 
+
+function _ml4kTestImageDataTensor(testTensor) {
+    var baseModelOutput = _ml4kBaseModel.predict(testTensor);
+    var transferModelOutput = _ml4kTransferModel.predict(baseModelOutput);
+
+    return transferModelOutput.data()
+        .then(function (output) {
+            if (output.length !== _ml4kModelClasses.length) {
+                console.log('unexpected output from model', output);
+                throw new Error('Unexpected output from model');
+            }
+
+            var scores = _ml4kModelClasses.map(function (label, idx) {
+                return {
+                    class_name : label,
+                    confidence : 100 * output[idx]
+                };
+            }).sort(_ml4kSortByConfidence);
+            return scores;
+        })
+        .catch(function (err) {
+            console.log('failed to test image');
+            console.log(err);
+        });
+}
+
+function ml4kClassifyImage(imagedata) {
+    return _ml4kCreateTensorForTestImage(imagedata)
+        .then(function (tensor) {
+            return _ml4kTestImageDataTensor(tensor);
+        })
+        .then(function (modelOutput) {
+            if (modelOutput.length > 0) {
+                ML4KJavaInterface.classifyResponse(modelOutput[0].class_name, modelOutput[0].confidence);
+            }
+            else {
+                ML4KJavaInterface.classifyResponse("Unknown", 0.1);
+            }
+        })
+        .catch(function (err) {
+            console.log('failed to classify image');
+            console.log(err);
+        });
+}
+
+// ---------------------------------------------------------------------
 
 function ml4kTrainNewModel(scratchkey) {
     return _ml4kGetTrainingImages(scratchkey)
