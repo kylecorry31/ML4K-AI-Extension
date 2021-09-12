@@ -11,13 +11,11 @@ public class ML4KWebPage {
 
     private static final String LOGPREFIX = "ML4KWebPage";
     private boolean pageReady = false;
-    private boolean modelReady = false;
 
     private String currentScratchKey;
 
     private String modelStatus = "Not trained";
     private int modelProgress = 0;
-    private Date modelUpdated = new Date();
 
     private WebView browser;
 
@@ -41,15 +39,6 @@ public class ML4KWebPage {
 
 
     @JavascriptInterface
-    public void setModelReady(boolean ready) {
-        modelReady = ready;
-    }
-    public boolean isModelReady() {
-        return modelReady;
-    }
-
-
-    @JavascriptInterface
     public String getInitialScratchKey() {
         return currentScratchKey;
     }
@@ -59,7 +48,6 @@ public class ML4KWebPage {
     public void setModelStatus(String status, int progress) {
         modelStatus = status;
         modelProgress = progress;
-        modelUpdated = new Date();
     }
 
     public int getModelProgress() {
@@ -73,6 +61,12 @@ public class ML4KWebPage {
     public void classifyResponse(String label, double confidence){
         Log.d(LOGPREFIX, "Received classify response");
         callback.GotClassification(label, label, confidence);
+    }
+
+    @JavascriptInterface
+    public void returnErrorMessage(String errormessage) {
+        Log.d(LOGPREFIX, "Returning error " + errormessage);
+        callback.displayErrorMessage(errormessage);
     }
 
     public void trainNewModel(String scratchkey) {

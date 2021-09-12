@@ -1,20 +1,22 @@
 package com.kylecorry.ml4k;
 
-import com.google.appinventor.components.runtime.*;
-import com.google.appinventor.components.runtime.util.YailList;
+import com.google.appinventor.components.common.ComponentCategory;
+import com.google.appinventor.components.common.PropertyTypeConstants;
+import com.google.appinventor.components.common.YaVersion;
 import com.google.appinventor.components.annotations.DesignerComponent;
 import com.google.appinventor.components.annotations.DesignerProperty;
 import com.google.appinventor.components.annotations.SimpleFunction;
 import com.google.appinventor.components.annotations.SimpleObject;
 import com.google.appinventor.components.annotations.SimpleEvent;
 import com.google.appinventor.components.annotations.SimpleProperty;
-import com.google.appinventor.components.common.ComponentCategory;
-import com.google.appinventor.components.common.PropertyTypeConstants;
-import com.google.appinventor.components.common.YaVersion;
-import com.google.appinventor.components.runtime.util.AsynchUtil;
 import com.google.appinventor.components.annotations.UsesPermissions;
-import com.google.appinventor.components.annotations.UsesLibraries;
 import com.google.appinventor.components.annotations.UsesAssets;
+import com.google.appinventor.components.runtime.AndroidNonvisibleComponent;
+import com.google.appinventor.components.runtime.Component;
+import com.google.appinventor.components.runtime.ComponentContainer;
+import com.google.appinventor.components.runtime.EventDispatcher;
+import com.google.appinventor.components.runtime.util.YailList;
+import com.google.appinventor.components.runtime.util.AsynchUtil;
 import com.google.appinventor.components.runtime.util.MediaUtil;
 import com.google.appinventor.components.runtime.WebViewer;
 
@@ -22,7 +24,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Build;
-import android.net.Uri;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceResponse;
@@ -30,17 +31,13 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import java.io.*;
-import java.net.*;
-import java.nio.file.Files;
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.regex.Pattern;
 
 @DesignerComponent(version = YaVersion.LABEL_COMPONENT_VERSION,
         description = "This provides an interface for the Machine Learning for Kids website.",
@@ -63,18 +60,68 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
 
     private final String ML4KURL = "https://machinelearningforkids.co.uk/appinventor-assets/";
 
+    private final Map<String, String> scratchKeyTypes;
+
+    // --------------------------------------------------------------------
+    // MESSAGES DISPLAYED TO USERS IN DIALOG POP-UPS IN THE EVENT OF ERRORS
+    // --------------------------------------------------------------------
+    private final static String EXPLAIN_API_KEY_NEEDED = "A Machine Learning for Kids 'API key' is needed to use the machine learning blocks. This is a secret code you can copy from the App Inventor page on the Machine Learning for Kids website.";
+    private final static String EXPLAIN_API_KEY_EXPIRED = "The Machine Learning for Kids website did not recognise your project API key. The most likely reason is that your ML project has been deleted.";
+    private final static String EXPLAIN_API_KEY_INVALID = "Your API key does not look like a machine learning key. It is a secret code you have to copy from the App Inventor page on the Machine Learning for Kids website.";
+    private final static String EXPLAIN_API_KEY_TYPE_TEXT = "You created a machine learning project to recognise text, so you can only use the text ML blocks in this project.";
+    private final static String EXPLAIN_API_KEY_TYPE_NUMBERS = "You created a machine learning project to recognise numbers, so you can only use the numbers ML blocks in this project.";
+    private final static String EXPLAIN_API_KEY_TYPE_IMAGES = "You created a machine learning project to recognise images, so you can only use the images ML blocks in this project.";
+    private final static String EXPLAIN_API_KEY_TYPE_SOUNDS = "You created a machine learning project to recognise sounds, so you cannot use that block";
+    private final static String EXPLAIN_ML_MODEL_NEEDED = "Please train a machine learning model before you try to do this.";
+
+
+
     public ML4KComponent(ComponentContainer container) {
         super(container.$form());
         activity = container.$context();
 
-        browser = prepareBrowser();
-        loadWebPage();
+        scratchKeyTypes = new HashMap<String, String>();
+
+        if (!isApiKeyMissing()) {
+            checkProjectType(new NextAction(NextStep.Init));
+        }
     }
+
+
+    // --------------------------------------------------------------------
+    // DISPLAY USER FEEDBACK
+    // --------------------------------------------------------------------
+
+    public void displayErrorMessage(final String errormessage) {
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+                builder
+                    .setTitle("Machine Learning for Kids")
+                    .setMessage(errormessage)
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            dialog.dismiss();
+                        }
+                    })
+                    .create()
+                    .show();
+            }
+        });
+    }
+
+
 
     @DesignerProperty(editorType = PropertyTypeConstants.PROPERTY_TYPE_STRING)
     @SimpleProperty(description = "The API key for the ML4K app.")
     public void Key(String key) {
-        this.key = key;
+        Log.d(LOGPREFIX, "Updating API key to " + key);
+        this.key = key.trim();
+
+        if (!isApiKeyMissing()) {
+            checkProjectType(new NextAction(NextStep.Init));
+        }
     }
 
     @SimpleProperty
@@ -82,50 +129,91 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
         return key;
     }
 
+    // --------------------------------------------------------------------
+    // ACTIONS REPRESENTED AS BLOCKS IN APP INVENTOR
+    // --------------------------------------------------------------------
+
     @SimpleFunction(description = "Get the classification for the image.")
     public void ClassifyImage(final String path) {
-        runInBackground(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    final java.io.File image = loadImageFile(path);
-                    ML4K ml4k = new ML4K(key);
-                    Classification classification = ml4k.classify(image);
-                    GotClassification(path, classification.getClassification(), classification.getConfidence());
-                    image.delete();
-                } catch (Exception e) {
-                    GotError(path, e.getMessage());
-                }
-            }
-        });
+        checkProjectType(new ClassifyImageAction(path));
     }
 
     @SimpleFunction(description = "Get the classification for the text.")
     public void ClassifyText(final String data) {
-        runInBackground(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    ML4K ml4k = new ML4K(key);
-                    Classification classification = ml4k.classify(data);
-                    GotClassification(data, classification.getClassification(), classification.getConfidence());
-                } catch (Exception e) {
-                    GotError(data, e.getMessage());
-                }
-            }
-        });
+        checkProjectType(new ClassifyTextAction(data));
     }
 
     @SimpleFunction(description = "Get the classification for the numbers.")
     public void ClassifyNumbers(final YailList numbers) {
+        checkProjectType(new ClassifyNumbersAction(numbers));
+    }
+
+
+    @SimpleFunction(description = "Train new machine learning model")
+    public void TrainNewModel() {
+        checkProjectType(new NextAction(NextStep.TrainModel));
+    }
+
+
+    @SimpleFunction(description = "Adds an image training data to the model")
+    public void AddImageTrainingData(final String label, final String path) {
+        checkProjectType(new ImageTrainingAction(label, path));
+    }
+
+    @SimpleFunction(description = "Adds a text training data to the model")
+    public void AddTextTrainingData(final String label, final String text) {
+        checkProjectType(new TextTrainingAction(label, text));
+    }
+
+    @SimpleFunction(description = "Adds numbers training data to the model")
+    public void AddNumbersTrainingData(final String label, final YailList numbers){
+        checkProjectType(new NumbersTrainingAction(label, numbers));
+    }
+
+
+    @SimpleFunction(description = "Gets the status of the model")
+    public void GetModelStatus() {
+        checkProjectType(new NextAction(NextStep.CheckModelStatus));
+    }
+
+
+
+    // --------------------------------------------------------------------
+    // SUBMIT DATA TO ML4K SERVER FOR CLASSIFICATION
+    //
+    //  network access needs to happen on background threads
+    // --------------------------------------------------------------------
+
+    private void classifyTestDataOnServer(final NextAction classifyAction) {
         runInBackground(new Runnable() {
             @Override
             public void run() {
-                final String data = numbers.toString();
+                String data = null;
                 try {
                     ML4K ml4k = new ML4K(key);
-                    Classification classification = ml4k.classify(convertYailListToDouble(numbers));
+
+                    Classification classification = null;
+                    switch (classifyAction.step) {
+                        case ClassifyText:
+                            data = ((ClassifyTextAction)classifyAction).text;
+                            classification = ml4k.classify(data);
+                            break;
+                        case ClassifyImage:
+                            data = ((ClassifyImageAction)classifyAction).imagePath;
+                            classification = ml4k.classify(loadImageFile(data));
+                            break;
+                        case ClassifyNumbers:
+                            YailList numbers = ((ClassifyNumbersAction)classifyAction).numbers;
+                            data = numbers.toString();
+                            classification = ml4k.classify(convertYailListToDouble(numbers));
+                            break;
+                        default:
+                            Log.d(LOGPREFIX, "Unexpected classify action");
+                            return;
+                    }
+
                     GotClassification(data, classification.getClassification(), classification.getConfidence());
+
                 } catch (Exception e) {
                     GotError(data, e.getMessage());
                 }
@@ -133,8 +221,59 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
         });
     }
 
-    @SimpleFunction(description = "Train new machine learning model")
-    public void TrainNewModel() {
+
+
+    // --------------------------------------------------------------------
+    // ADD TRAINING DATA TO ML4K SERVER
+    //
+    //  network access needs to happen on background threads
+    // --------------------------------------------------------------------
+
+    private void addTrainingDataToProject(final NextAction addTrainingAction) {
+        runInBackground(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ML4K ml4k = new ML4K(key);
+
+                    switch (addTrainingAction.step) {
+                        case AddTextTraining:
+                            ml4k.addTrainingData(
+                                ((TextTrainingAction)addTrainingAction).label,
+                                ((TextTrainingAction)addTrainingAction).text);
+                            break;
+                        case AddImageTraining:
+                            java.io.File image = loadImageFile(((ImageTrainingAction)addTrainingAction).path);
+                            if (image == null) {
+                                throw new ML4KException("Could not load image");
+                            }
+                            ml4k.addTrainingData(
+                                ((ImageTrainingAction)addTrainingAction).label,
+                                image);
+                            break;
+                        case AddNumbersTraining:
+                            ml4k.addTrainingData(
+                                ((NumbersTrainingAction)addTrainingAction).label,
+                                convertYailListToDouble(((NumbersTrainingAction)addTrainingAction).numbers));
+                            break;
+                        default:
+                            Log.d(LOGPREFIX, "Unexpected training action");
+                            return;
+                    }
+                } catch (Exception e) {
+                    GotError("train", e.getMessage());
+                }
+            }
+        });
+    }
+
+
+
+    // --------------------------------------------------------------------
+    // ML MODEL ACTIONS FOR MODELS HOSTED ON ML4K SERVER
+    // --------------------------------------------------------------------
+
+    private void trainModelWithWatson() {
         runInBackground(new Runnable() {
             @Override
             public void run() {
@@ -148,57 +287,8 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
         });
     }
 
-    @SimpleFunction(description = "Adds an image training data to the model")
-    public void AddImageTrainingData(final String label, final String path) {
-        runInBackground(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    java.io.File image = loadImageFile(path);
-                    if (image == null){
-                        throw new ML4KException("Could not load image");
-                    }
-                    ML4K ml4k = new ML4K(key);
-                    ml4k.addTrainingData(label, image);
-                } catch (Exception e) {
-                    GotError("train", e.getMessage());
-                }
-            }
-        });
-    }
 
-    @SimpleFunction(description = "Adds a text training data to the model")
-    public void AddTextTrainingData(final String label, final String text) {
-        runInBackground(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    ML4K ml4k = new ML4K(key);
-                    ml4k.addTrainingData(label, text);
-                } catch (Exception e) {
-                    GotError("train", e.getMessage());
-                }
-            }
-        });
-    }
-
-    @SimpleFunction(description = "Adds numbers training data to the model")
-    public void AddNumbersTrainingData(final String label, final YailList numbers){
-        runInBackground(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    ML4K ml4k = new ML4K(key);
-                    ml4k.addTrainingData(label, convertYailListToDouble(numbers));
-                } catch (Exception e) {
-                    GotError("train", e.getMessage());
-                }
-            }
-        });
-    }
-
-    @SimpleFunction(description = "Gets the status of the model")
-    public void GetModelStatus() {
+    private void fetchModelStatusFromServer() {
         runInBackground(new Runnable() {
             @Override
             public void run() {
@@ -212,6 +302,12 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
             }
         });
     }
+
+
+
+    // --------------------------------------------------------------------
+    // EVENTS FIRED BY THE EXTENSION
+    // --------------------------------------------------------------------
 
     /**
      * Event fired when the status check completes.
@@ -247,7 +343,10 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
         broadcastEvent("GotClassification", data, classification, confidence);
     }
 
+
+    // --------------------------------------------------------------------
     // Helpers
+    // --------------------------------------------------------------------
 
     /**
      * Broadcasts an event on the UI thread
@@ -321,55 +420,76 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
         AsynchUtil.runAsynchronously(runnable);
     }
 
-
-
-    private void displayErrorMessage(String errormessage) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-        builder
-            .setTitle("Machine Learning for Kids")
-            .setMessage(errormessage)
-            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    dialog.dismiss();
-                }
-            })
-            .create()
-            .show();
+    private boolean isApiKeyMissing() {
+        return key == null || key.trim().isEmpty();
     }
 
 
 
-    @SimpleFunction(description = "Train new machine learning model")
-    public void TrainNewTfjsModel() {
-        if (webPageObj.isReady()) {
-            if (key == null || key.trim().isEmpty()) {
-                displayErrorMessage("API key required");
-            }
-            else {
-                webPageObj.trainNewModel(key);
-            }
+
+
+    // ---------------------------------------------------------------------
+    // SUPPORT FOR TENSORFLOW.JS MODELS ON-DEVICE IN HIDDEN EMBEDDED BROWSER
+    // ---------------------------------------------------------------------
+
+    private void initialiseTensorFlow() {
+        Log.d(LOGPREFIX, "initializing tensorflowjs");
+        if (webPageObj == null) {
+            activity.runOnUiThread(new Runnable()  {
+                @Override
+                public void run() {
+                    browser = prepareBrowser();
+                    loadWebPage();
+                }
+            });
+        }
+    }
+
+
+    private void trainModelWithTensorflow() {
+        initialiseTensorFlow();
+
+        if (webPageObj != null && webPageObj.isReady()) {
+            webPageObj.trainNewModel(key);
         }
         else {
+            // very unlikely to happen, but there is maybe a tiny race condition where it is possible?
             displayErrorMessage("Not ready yet. Please try again in a moment");
         }
     }
 
-    @SimpleProperty
-    public String GetTfjsModelState() {
-        return webPageObj.getModelStatus() + " " + webPageObj.getModelProgress();
+    private void checkTensorFlowJsStatus() {
+        if (webPageObj == null) {
+            GotStatus(0, "Not trained");
+        }
+        else {
+            switch (webPageObj.getModelStatus()) {
+                case "Not trained":
+                case "Failed":
+                    GotStatus(0, webPageObj.getModelStatus());
+                    break;
+                case "Available":
+                    GotStatus(2, webPageObj.getModelStatus());
+                    break;
+                case "Training":
+                    GotStatus(1, webPageObj.getModelProgress() + "%");
+                    break;
+            }
+        }
     }
 
-    @SimpleFunction(description = "Get the classification for the image.")
-    public void ClassifyImageTfjs(final String path) {
+
+    private void classifyImageWithTensorflow(final String path) {
+        initialiseTensorFlow();
+
         if (!webPageObj.getModelStatus().equals("Available")) {
-            displayErrorMessage("Please train a model first");
+            displayErrorMessage(EXPLAIN_ML_MODEL_NEEDED);
             return;
         }
 
         runInBackground(new Runnable() {
             @Override
             public void run() {
-                Log.d(LOGPREFIX, "classifying image....");
                 try {
                     Log.d(LOGPREFIX, "getting and resizing image");
                     final java.io.File image = loadImageFile(path);
@@ -463,6 +583,315 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
         }
         catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+
+
+    // ---------------------------------------------------------------------
+    // COORDINATE TAKING ACTIONS THAT ARE IMPACTED BY THE PROJECT TYPE
+    // ---------------------------------------------------------------------
+
+    /**
+     * Check the type of project before taking the requested action.
+     *
+     *  The project type is read from an in-memory cache if it's already
+     *   known, otherwise an API call to ML4K servers is made first before
+     *   taking the requested action.
+     *
+     * @param nextAction  Action that should be taken once project type has been verified
+     */
+    private void checkProjectType(final NextAction nextAction) {
+        if (isApiKeyMissing()) {
+            processNextAction("unknown", nextAction);
+        }
+        else if (scratchKeyTypes.containsKey(key)) {
+            processNextAction(scratchKeyTypes.get(key), nextAction);
+        }
+        else {
+            runInBackground(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        ML4K ml4k = new ML4K(key);
+                        ModelStatus status = ml4k.getModelStatus();
+                        String type = status.getProjectType();
+                        scratchKeyTypes.put(key, type);
+
+                        processNextAction(type, nextAction);
+                    }
+                    catch (ML4KException exc) {
+                        if (exc.getMessage().equals("Scratch key not found"))
+                        {
+                            scratchKeyTypes.put(key, "expired");
+                            processNextAction("expired", nextAction);
+                        }
+                        else if (exc.getMessage().equals("API key isn't a Machine Learning for Kids key"))
+                        {
+                            scratchKeyTypes.put(key, "invalid");
+                            processNextAction("invalid", nextAction);
+                        }
+                        else {
+                            processNextAction("unknown", nextAction);
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // take the requested action
+    private void processNextAction(final String projectType, final NextAction action) {
+        Log.d(LOGPREFIX, "processNextAction " + action.step.name() + " for " + projectType);
+
+        // startup actions
+        if (action.step == NextStep.Init) {
+            if (projectType.equals("imgtfjs")) {
+                initialiseTensorFlow();
+            }
+            return;
+        }
+
+        // if there is a problem with the API key, it
+        //  doesn't matter what the next step is, the
+        //  response is the same: display a message
+        if ("invalid".equals(projectType)) {
+            displayErrorMessage(EXPLAIN_API_KEY_INVALID);
+            return;
+        }
+        if ("expired".equals(projectType)) {
+            displayErrorMessage(EXPLAIN_API_KEY_EXPIRED);
+            return;
+        }
+        if ("unknown".equals(projectType)) {
+            displayErrorMessage(EXPLAIN_API_KEY_NEEDED);
+            return;
+        }
+
+        // otherwise...
+        switch (action.step) {
+            // training data actions
+            case AddTextTraining:
+                switch (projectType) {
+                    case "text":
+                        addTrainingDataToProject(action);
+                        break;
+                    case "images":
+                    case "imgtfjs":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_IMAGES);
+                        break;
+                    case "numbers":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_NUMBERS);
+                        break;
+                    case "sounds":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_SOUNDS);
+                        break;
+                }
+                break;
+            case AddImageTraining:
+                switch (projectType) {
+                    case "images":
+                    case "imgtfjs":
+                        addTrainingDataToProject(action);
+                        break;
+                    case "text":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_TEXT);
+                        break;
+                    case "numbers":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_NUMBERS);
+                        break;
+                    case "sounds":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_SOUNDS);
+                        break;
+                }
+                break;
+            case AddNumbersTraining:
+                switch (projectType) {
+                    case "numbers":
+                        addTrainingDataToProject(action);
+                        break;
+                    case "images":
+                    case "imgtfjs":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_IMAGES);
+                        break;
+                    case "text":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_TEXT);
+                        break;
+                    case "sounds":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_SOUNDS);
+                        break;
+                }
+                break;
+            // classification actions
+            case ClassifyText:
+                switch (projectType) {
+                    case "text":
+                        classifyTestDataOnServer(action);
+                        break;
+                    case "images":
+                    case "imgtfjs":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_IMAGES);
+                        break;
+                    case "numbers":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_NUMBERS);
+                        break;
+                    case "sounds":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_SOUNDS);
+                        break;
+                }
+                break;
+            case ClassifyImage:
+                switch (projectType) {
+                    case "images":
+                        classifyTestDataOnServer(action);
+                        break;
+                    case "imgtfjs":
+                        classifyImageWithTensorflow(((ClassifyImageAction)action).imagePath);
+                        break;
+                    case "text":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_TEXT);
+                        break;
+                    case "numbers":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_NUMBERS);
+                        break;
+                    case "sounds":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_SOUNDS);
+                        break;
+                }
+                break;
+            case ClassifyNumbers:
+                switch (projectType) {
+                    case "numbers":
+                        classifyTestDataOnServer(action);
+                        break;
+                    case "images":
+                    case "imgtfjs":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_IMAGES);
+                        break;
+                    case "text":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_TEXT);
+                        break;
+                    case "sounds":
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_SOUNDS);
+                        break;
+                }
+                break;
+            // ML model actions
+            case TrainModel:
+                switch (projectType) {
+                    case "images":
+                    case "text":
+                    case "numbers":
+                        trainModelWithWatson();
+                        break;
+                    case "imgtfjs":
+                        trainModelWithTensorflow();
+                        break;
+                    default:
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_SOUNDS);
+                        break;
+                }
+                break;
+            case CheckModelStatus:
+                switch (projectType) {
+                    case "images":
+                    case "text":
+                    case "numbers":
+                        fetchModelStatusFromServer();
+                        break;
+                    case "imgtfjs":
+                        checkTensorFlowJsStatus();
+                        break;
+                    default:
+                        displayErrorMessage(EXPLAIN_API_KEY_TYPE_SOUNDS);
+                        break;
+                }
+                break;
+        }
+    }
+
+
+
+
+
+
+    // --------------------------------------------------------------------
+    // DEFINES ACTIONS THAT ARE CARRIED OUT DIFFERENTLY DEPENDING ON THE
+    //  TYPE OF ML PROJECT (e.g. text, images, etc.)
+    //
+    //  This means these actions can only be carried out after fetching the
+    //   type of project.
+    // --------------------------------------------------------------------
+
+    private enum NextStep {
+        // init local ML model - only relevant for project types
+        //  where models are hosted on-device
+        Init,
+        // add training data to the project
+        AddTextTraining,
+        AddImageTraining,
+        AddNumbersTraining,
+        // classify test data using a model
+        ClassifyText,
+        ClassifyImage,
+        ClassifyNumbers,
+        // train a new ML model
+        TrainModel,
+        // check the current status of the ML model
+        CheckModelStatus;
+    }
+    private class NextAction {
+        private NextStep step;
+        private NextAction(NextStep step) {
+            this.step = step;
+        }
+    }
+    private class ClassifyImageAction extends NextAction {
+        private String imagePath;
+        private ClassifyImageAction(String path) {
+            super(NextStep.ClassifyImage);
+            this.imagePath = path;
+        }
+    }
+    private class ClassifyNumbersAction extends NextAction {
+        private YailList numbers;
+        private ClassifyNumbersAction(YailList nums) {
+            super(NextStep.ClassifyNumbers);
+            this.numbers = nums;
+        }
+    }
+    private class ClassifyTextAction extends NextAction {
+        private String text;
+        private ClassifyTextAction(String textData) {
+            super(NextStep.ClassifyText);
+            this.text = textData;
+        }
+    }
+    private class TextTrainingAction extends NextAction {
+        private String text;
+        private String label;
+        private TextTrainingAction(String label, String textData) {
+            super(NextStep.AddTextTraining);
+            this.text = textData;
+            this.label = label;
+        }
+    }
+    private class ImageTrainingAction extends NextAction {
+        private String path;
+        private String label;
+        private ImageTrainingAction(String label, String imagePath) {
+            super(NextStep.AddImageTraining);
+            this.path = imagePath;
+            this.label = label;
+        }
+    }
+    private class NumbersTrainingAction extends NextAction {
+        private YailList numbers;
+        private String label;
+        private NumbersTrainingAction(String label, YailList nums) {
+            super(NextStep.AddNumbersTraining);
+            this.label = label;
+            this.numbers = nums;
         }
     }
 }

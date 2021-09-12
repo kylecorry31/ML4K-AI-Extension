@@ -88,16 +88,6 @@ function _ml4kSaveModel(modeltype, scratchkey, modelClasses, transferModel) {
         });
 }
 
-function _ml4kDeleteModel(modeltype, scratchkey) {
-    console.log('deleting model');
-    var savelocation = _ml4kGetModelDbLocation(modeltype, scratchkey);
-    return tf.io.removeModel(savelocation)
-        .catch(function (err) {
-            console.log('failed to delete model');
-            console.log(err);
-        });
-}
-
 // ---------------------------------------------------------------------
 
 
@@ -222,6 +212,7 @@ function _ml4kCreateTensorForImageData(imageid, imagedata, imagelabel) {
         hiddenImg.height = _ML4K_IMG_HEIGHT;
         hiddenImg.onerror = function (err) {
             console.log('Failed to load image', imageid);
+            console.log(err);
             return reject(err);
         };
         hiddenImg.onload = function () {
@@ -273,6 +264,10 @@ function _ml4kGetImageData(imageid, imageurl, imagelabel) {
     return _ml4kFetchData(imageurl)
         .then(function (imagedata) {
             return _ml4kCreateTensorForImageData(imageid, imagedata, imagelabel);
+        })
+        .catch(function (err) {
+            console.log(err);
+            throw new Error('Unable to process training image at ' + imageurl);
         });
 }
 
@@ -318,7 +313,7 @@ function _ml4kTestImageDataTensor(testTensor) {
         .then(function (output) {
             if (output.length !== _ml4kModelClasses.length) {
                 console.log('unexpected output from model', output);
-                throw new Error('Unexpected output from model');
+                return [];
             }
 
             var scores = _ml4kModelClasses.map(function (label, idx) {
@@ -332,6 +327,7 @@ function _ml4kTestImageDataTensor(testTensor) {
         .catch(function (err) {
             console.log('failed to test image');
             console.log(err);
+            return [];
         });
 }
 
@@ -351,6 +347,7 @@ function ml4kClassifyImage(imagedata) {
         .catch(function (err) {
             console.log('failed to classify image');
             console.log(err);
+            ML4KJavaInterface.classifyResponse("Unknown", 0.1);
         });
 }
 
@@ -364,13 +361,11 @@ function ml4kTrainNewModel(scratchkey) {
             }
             return _ml4kTrainModel(_ml4kBaseModel, _ml4kTransferModel, scratchkey, trainingdata);
         })
-        .then(function () {
-            ML4KJavaInterface.setModelReady(true);
-        })
         .catch(function (err) {
             console.log('model training failure');
             console.log(err);
             ML4KJavaInterface.setModelStatus('Failed', 0);
+            ML4KJavaInterface.returnErrorMessage(err.message);
         });
 }
 

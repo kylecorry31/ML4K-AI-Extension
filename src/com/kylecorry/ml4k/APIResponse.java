@@ -47,6 +47,10 @@ public class APIResponse {
         return responseCode == HttpURLConnection.HTTP_OK;
     }
 
+    public boolean isNotFound() {
+        return responseCode == HttpURLConnection.HTTP_NOT_FOUND;
+    }
+
     public boolean isError() {
         return !isOK();
     }
