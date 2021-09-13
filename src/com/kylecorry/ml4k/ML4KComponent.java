@@ -548,6 +548,7 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
         WebSettings webViewSettings = webView.getSettings();
         webViewSettings.setJavaScriptEnabled(true);
         webViewSettings.setMediaPlaybackRequiresUserGesture(false);
+        webViewSettings.setDomStorageEnabled(true);
 
         webView.setWebViewClient(new WebViewClient() {
             @Override

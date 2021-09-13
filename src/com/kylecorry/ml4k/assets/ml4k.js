@@ -61,6 +61,9 @@ function _ml4kLoadModel(modeltype, scratchkey) {
                 var modelMetadataStr = window.localStorage.getItem('ml4k-modelinfo-' + modeltype + '-' + scratchkey);
                 _ml4kModelClasses = JSON.parse(modelMetadataStr).classes;
             }
+            else {
+                console.log('Unable to access local storage');
+            }
 
             ML4KJavaInterface.setModelStatus('Available', 100);
             _ml4kUsingRestoredModel = true;
@@ -80,6 +83,9 @@ function _ml4kSaveModel(modeltype, scratchkey, modelClasses, transferModel) {
             if (window.localStorage) {
                 window.localStorage.setItem('ml4k-modelinfo-' + modeltype + '-' + scratchkey,
                     JSON.stringify({ classes : modelClasses }));
+            }
+            else {
+                console.log('unable to save model metadata');
             }
         })
         .catch(function (err) {
@@ -311,6 +317,9 @@ function _ml4kTestImageDataTensor(testTensor) {
 
     return transferModelOutput.data()
         .then(function (output) {
+            console.log(JSON.stringify(_ml4kModelClasses));
+            console.log(JSON.stringify(output));
+
             if (output.length !== _ml4kModelClasses.length) {
                 console.log('unexpected output from model', output);
                 return [];
