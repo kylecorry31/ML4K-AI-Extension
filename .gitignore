@@ -2,3 +2,7 @@
 _build/
 dist/
 build/
+src/com/kylecorry/ml4k/assets/model.json
+src/com/kylecorry/ml4k/assets/tf.min.js
+src/com/kylecorry/ml4k/assets/group*-shard1of1
+src/com/kylecorry/ml4k/assets/promisepool.js

@@ -81,6 +81,13 @@ public class ML4K {
             throw new ML4KException("Could not load image file");
         } catch (IOException e) {
             throw new ML4KException("No Internet connection."); // TODO: standardize error messages
+        } finally {
+            try {
+                image.delete();
+            }
+            catch (Exception exc) {
+                // okay to ignore - temp files are cleaned up eventually by OS
+            }
         }
     }
 
@@ -95,7 +102,7 @@ public class ML4K {
             String urlStr = getBaseURL() + CLASSIFY_ENDPOINT + "?data=" + URLEncoder.encode(text, "UTF-8");
             URL url = new URL(urlStr);
             APIResponse res = http.getJSON(url);
-            
+
             if (res.isOK()) {
                 return Classification.fromJson(res.getBody());
             } else {
@@ -122,7 +129,7 @@ public class ML4K {
             String urlStr = getBaseURL() + CLASSIFY_ENDPOINT + "?" + urlEncodeList("data", numbers);
             URL url = new URL(urlStr);
             APIResponse res = http.getJSON(url);
-            
+
             if (res.isOK()) {
                 return Classification.fromJson(res.getBody());
             } else {
@@ -160,6 +167,13 @@ public class ML4K {
             addTrainingDataHelper(label, "\"" + ImageEncoder.encode(image) + "\"");
         } catch (IOException e) {
             throw new ML4KException("Could not encode image");
+        } finally {
+            try {
+                image.delete();
+            }
+            catch (Exception exc) {
+                // okay to ignore - temp files are cleaned up eventually by OS
+            }
         }
     }
 
@@ -181,10 +195,13 @@ public class ML4K {
         try{
             URL url = new URL(getBaseURL() + STATUS_ENDPOINT);
             APIResponse res = http.getJSON(url);
-         
+
             if (res.isOK()) {
                 return ModelStatus.fromJson(res.getBody());
-            } else {
+            } else if (res.isNotFound()) {
+                throw new ML4KException("Scratch key not found");
+            }
+            else {
                 APIErrorResponse response = APIErrorResponse.fromJson(res.getBody());
                 throw new ML4KException(response == null ? "Bad response from server: " + res.getResponseCode() : response.getError());
             }
@@ -204,7 +221,7 @@ public class ML4K {
         try {
             URL url = new URL(getBaseURL() + MODELS_ENDPOINT);
             APIResponse res = http.postJSON(url, "{}");
-            
+
             if (res.isOK()) {
                 // Do nothing
             } else {
@@ -255,7 +272,7 @@ public class ML4K {
         try {
             URL url = new URL(getBaseURL() + TRAIN_ENDPOINT);
             APIResponse res = http.postJSON(url, "{ \"data\": " + data + ", \"label\": \"" + label + "\" }");
-            
+
             if (res.isOK()) {
                 // Do nothing
             } else {

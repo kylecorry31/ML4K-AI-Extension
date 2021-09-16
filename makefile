@@ -5,6 +5,7 @@ all:
 		git clone https://github.com/mit-cml/appinventor-sources; \
 	fi && \
 	cp -r ../src/com/kylecorry appinventor-sources/appinventor/components/src/com/ && \
+	../downloadtfjs.sh && \
 	cd appinventor-sources/appinventor && \
 	ant extensions && \
 	cd ../.. && \

@@ -3,15 +3,17 @@ package com.kylecorry.ml4k;
 class ModelStatus {
     private int statusCode;
     private String message;
+    private String projectType;
 
     /**
      * Default constructor
      * @param statusCode the status code
      * @param message the message
      */
-    private ModelStatus(int statusCode, String message){
+    private ModelStatus(int statusCode, String message, String projectType){
         this.statusCode = statusCode;
         this.message = message;
+        this.projectType = projectType;
     }
 
     /**
@@ -23,10 +25,11 @@ class ModelStatus {
     public static ModelStatus fromJson(String json) throws ML4KException {
         int code = JSONUtils.readIntProperty(json, "status");
         String message = JSONUtils.readStringProperty(json, "msg");
-        if (message == null){
+        String type = JSONUtils.readStringProperty(json, "type");
+        if (message == null || type == null){
             throw new ML4KException("JSON is not valid: " + json);
         }
-        return new ModelStatus(code, message);
+        return new ModelStatus(code, message, type);
     }
 
     /**
@@ -43,11 +46,16 @@ class ModelStatus {
         return message;
     }
 
+    public String getProjectType(){
+        return projectType;
+    }
+
     @Override
     public String toString() {
         return "ModelStatus{" +
                 "statusCode=" + statusCode +
                 ", message='" + message + '\'' +
+                ", type='" + projectType + '\'' +
                 '}';
     }
 }
