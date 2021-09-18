@@ -280,7 +280,7 @@ function _ml4kGetImageData(imageid, imageurl, imagelabel) {
 function _ml4kGetTrainingImages(scratchkey) {
     console.log('getting training images');
     var labels = new Set();
-    return _ml4kFetchJson('https://machinelearningforkids.co.uk/api/scratch/' + scratchkey + '/train')
+    return _ml4kFetchJson('https://machinelearningforkids.co.uk/api/scratch/' + scratchkey + '/train?proxy=true')
         .then(function (imagesList) {
             return pool({
                 collection: imagesList,
