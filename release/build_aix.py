@@ -4,7 +4,7 @@ import os
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        print "Usage: build_aix.py <API KEY>"
+        print("Usage: build_aix.py <API KEY>")
         exit(1)
     api_key = sys.argv[1]
 
