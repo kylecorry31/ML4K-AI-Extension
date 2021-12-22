@@ -29,7 +29,16 @@ class ModelStatus {
         if (message == null || type == null){
             throw new ML4KException("JSON is not valid: " + json);
         }
-        return new ModelStatus(code, message, type);
+        if (type.equals("text") ||
+            type.equals("imgtfjs") ||
+            type.equals("numbers") ||
+            type.equals("sounds"))
+        {
+            return new ModelStatus(code, message, type);
+        }
+        else {
+            throw new ML4KException("Unexpected project type: " + type);
+        }
     }
 
     /**
