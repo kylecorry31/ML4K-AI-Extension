@@ -198,10 +198,6 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                             data = ((ClassifyTextAction)classifyAction).text;
                             classification = ml4k.classify(data);
                             break;
-                        case ClassifyImage:
-                            data = ((ClassifyImageAction)classifyAction).imagePath;
-                            classification = ml4k.classify(loadImageFile(data));
-                            break;
                         case ClassifyNumbers:
                             YailList numbers = ((ClassifyNumbersAction)classifyAction).numbers;
                             data = numbers.toString();
@@ -677,7 +673,6 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                     case "text":
                         addTrainingDataToProject(action);
                         break;
-                    case "images":
                     case "imgtfjs":
                         displayErrorMessage(EXPLAIN_API_KEY_TYPE_IMAGES);
                         break;
@@ -691,7 +686,6 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                 break;
             case AddImageTraining:
                 switch (projectType) {
-                    case "images":
                     case "imgtfjs":
                         addTrainingDataToProject(action);
                         break;
@@ -711,7 +705,6 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                     case "numbers":
                         addTrainingDataToProject(action);
                         break;
-                    case "images":
                     case "imgtfjs":
                         displayErrorMessage(EXPLAIN_API_KEY_TYPE_IMAGES);
                         break;
@@ -729,7 +722,6 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                     case "text":
                         classifyTestDataOnServer(action);
                         break;
-                    case "images":
                     case "imgtfjs":
                         displayErrorMessage(EXPLAIN_API_KEY_TYPE_IMAGES);
                         break;
@@ -743,9 +735,6 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                 break;
             case ClassifyImage:
                 switch (projectType) {
-                    case "images":
-                        classifyTestDataOnServer(action);
-                        break;
                     case "imgtfjs":
                         classifyImageWithTensorflow(((ClassifyImageAction)action).imagePath);
                         break;
@@ -765,7 +754,6 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                     case "numbers":
                         classifyTestDataOnServer(action);
                         break;
-                    case "images":
                     case "imgtfjs":
                         displayErrorMessage(EXPLAIN_API_KEY_TYPE_IMAGES);
                         break;
@@ -780,7 +768,6 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
             // ML model actions
             case TrainModel:
                 switch (projectType) {
-                    case "images":
                     case "text":
                     case "numbers":
                         trainModelWithWatson();
@@ -795,7 +782,6 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
                 break;
             case CheckModelStatus:
                 switch (projectType) {
-                    case "images":
                     case "text":
                     case "numbers":
                         fetchModelStatusFromServer();

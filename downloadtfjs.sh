@@ -7,7 +7,7 @@ if [ ! -f "../src/com/kylecorry/ml4k/assets/model.json" ]; then
     do
         curl https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/group$i-shard1of1 -o ../src/com/kylecorry/ml4k/assets/group$i-shard1of1
     done
-    npm install @tensorflow/tfjs
+    npm install @tensorflow/tfjs@3.12.0
     cp node_modules/@tensorflow/tfjs/dist/tf.min.js ../src/com/kylecorry/ml4k/assets/.
     npm install @ricokahler/pool
     cp node_modules/@ricokahler/pool/dist/index.js ../src/com/kylecorry/ml4k/assets/promisepool.js
