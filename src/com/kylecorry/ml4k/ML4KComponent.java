@@ -76,7 +76,7 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
 
 
 
-    public ML4KComponent(ComponentContainer container) {
+    public ML4KComponent(ComponentContainer container) {
         super(container.$form());
         activity = container.$context();
 
