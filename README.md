@@ -74,7 +74,7 @@ Download the latest extension file (.aix) from the [releases](https://github.com
     * statusCode 1 - "Training in progress" - The model is still training and cannot be used.  
     * statusCode 0 - Something went wrong (or there isn't a model) - the 'message' variable will contain information on the issue.  
   
-9. Use the "TrainNewModel" block to train your Text or Numbers project with App Inventor.
+9. Use the "TrainNewModel" block to train your machine learning model with App Inventor.
     ![](examples/TrainNewModel.jpg) 
     * Note: Using this block is optional for text or numbers projects, as models can be trained on the Machine Learning for Kids server from the "Learn & Test" page. However for Image projects, using this block is essential and must be used to create a model before an ML model can be used (because models are created and used on the mobile device)
 
