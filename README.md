@@ -76,7 +76,7 @@ Download the latest extension file (.aix) from the [releases](https://github.com
   
 9. Use the "TrainNewModel" block to train your Text or Numbers project with App Inventor.
     ![](examples/TrainNewModel.jpg) 
-    * Note: This block cannot be used for training Image projects. Only available for Text and Numbers. 
+    * Note: Using this block is optional for text or numbers projects, as models can be trained on the Machine Learning for Kids server from the "Learn & Test" page. However for Image projects, using this block is essential and must be used to create a model before an ML model can be used (because models are created and used on the mobile device)
 
 ### Handling Errors
 Upon an error, the "GotError" event block will be called with the error that occurred. Please use this event block fro debugging.  
