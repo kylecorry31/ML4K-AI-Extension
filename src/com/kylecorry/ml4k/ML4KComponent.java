@@ -72,7 +72,9 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
     private final static String EXPLAIN_API_KEY_TYPE_NUMBERS = "You created a machine learning project to recognise numbers, so you can only use the numbers ML blocks in this project.";
     private final static String EXPLAIN_API_KEY_TYPE_IMAGES = "You created a machine learning project to recognise images, so you can only use the images ML blocks in this project.";
     private final static String EXPLAIN_API_KEY_TYPE_SOUNDS = "You created a machine learning project to recognise sounds, so you cannot use that block";
-    private final static String EXPLAIN_ML_MODEL_NEEDED = "Please train a machine learning model before you try to do this.";
+    private final static String EXPLAIN_ML_MODEL_NEEDED = "Please train a machine learning model before you try to do this. You must do this in your App Inventor project, using the 'TrainNewModel' block.";
+    private final static String EXPLAIN_ML_MODEL_NOTREADY = "Your machine learning model is still training. Please wait for this to complete.";
+    private final static String EXPLAIN_ML_MODEL_FAILED = "Sorry! Your machine learning model failed to train.";
 
 
 
@@ -478,9 +480,19 @@ public final class ML4KComponent extends AndroidNonvisibleComponent {
     private void classifyImageWithTensorflow(final String path) {
         initialiseTensorFlow();
 
-        if (!webPageObj.getModelStatus().equals("Available")) {
-            displayErrorMessage(EXPLAIN_ML_MODEL_NEEDED);
-            return;
+        switch (webPageObj.getModelStatus()) {
+            case "Not trained":
+                displayErrorMessage(EXPLAIN_ML_MODEL_NEEDED);
+                return;
+            case "Failed":
+                displayErrorMessage(EXPLAIN_ML_MODEL_FAILED);
+                return;
+            case "Training":
+                displayErrorMessage(EXPLAIN_ML_MODEL_NOTREADY);
+                return;
+            case "Available":
+                // yay, we're all good!
+                break;
         }
 
         runInBackground(new Runnable() {
